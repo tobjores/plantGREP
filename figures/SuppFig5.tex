@@ -1,0 +1,73 @@
+\begin{tikzpicture}
+
+	%%% examples of TF effects %%%
+	\coordinate (TF effects) at (0, 0);
+	
+	% set styles for half violin plots
+	\pgfplotsset{
+		absent/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfrowname\relax
+				\pgfkeysalso{fill = \pggfrowname}
+			\else
+				\pgfkeysalso{fill = \pggfrowname!50!black}
+			\fi
+		},
+		present/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfrowname\relax
+				\pgfkeysalso{fill = \pggfrowname!50!white}
+			\else
+				\pgfkeysalso{fill = \pggfrowname}
+			\fi
+		}
+	}
+	
+	\pgfplotscreateplotcyclelist{none}{black}
+	
+	\begin{pggfplot}[% 
+		at = {(TF effects)},
+		total width = \textwidth,
+		xlabel = transcription factor family (motif ID),
+		ylabel = {\enrichment[GC-normalized]},
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em},
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.15},
+		ytick = {-12, -10, ..., 12},
+		cycle list name = none,
+		legend style = {anchor = south east, at = {(1, 1)}},
+		legend columns = 3,
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{TF_effect_examples}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{transcription factor binding site:}\hspace*{-\groupplotsep}} = {empty legend},
+				absent = {half violin left legend = y, fill = gray!75!black},
+				present = {half violin right legend = y, fill = gray!25!white}
+			},
+			only facet = 1
+		)
+	
+		\pggf_violin(
+			half violin,
+			style from column = {hits},
+			draw = black,
+			sample size = {rotate = 90},
+			sample size left = {anchor = south west},
+			sample size right = {anchor = north west},
+			forget plot
+		)
+		
+		\pggf_signif()
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

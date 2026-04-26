@@ -1,0 +1,149 @@
+\begin{tikzpicture}
+
+	%%% in silico evolution scheme %%%
+	\coordinate[yshift = -\columnsep] (evo scheme) at (0, 0);
+	
+	\node[anchor = north west, xshift = .5\columnsep] (spacer) at (evo scheme) {\hphantom{computational model}};
+	
+	\node[anchor = north, align = center, font = \bfseries, yshift = -.5\columnsep] (evo title) at (spacer.north) {\textit{in silico} evolution};
+	
+	\node[below = .1cm of evo title, align = center, inner ysep = .2em] (start) {WT sequence};
+	
+	\node[below = .5cm of start, align = center, inner ysep = .2em] (mutate) {digitally create all\\possible single-base\\substitution variants};
+	
+	\node[below = .5cm of mutate, align = center, inner ysep = .2em] (score) {score variants with\\\textbf{plantGREP}};
+	
+	\node[below = .5cm of score, align = center, inner ysep = .2em] (select) {select sequence\\with best score};
+	
+	\draw[thick, -Latex] (start) -- (mutate);
+	
+	\draw[thick, -Latex] (mutate) -- (score);
+	
+	\draw[thick, -Latex] (score) -- (select);
+	
+	\draw[thick, -Latex, rounded corners = .15cm] (select.east) -- ($(select -| spacer.east) + (\columnsep, 0)$) |- (mutate.east) node[anchor = south, rotate = -90, pos = .25, align = center] (n rounds) {$n$ rounds};
+	
+	
+	%%% in silico evolution: number of rounds %%%
+	\coordinate[xshift = \columnsep] (evo rounds) at (evo scheme -| n rounds.north);
+	
+	\distance{evo rounds}{\textwidth, 0}
+	
+	\begin{pggfplot}[%
+		at = {(evo rounds)},
+		total width = \xdistance,
+		xlabel = number of \textit{in silico} evolution rounds,
+		ylabel = \enrichment,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+	]{evolution_rounds}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin(
+			color from col name,
+			draw = black,
+			shade = left,
+			shade color = white,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% in silico evolution: species/condition specificity %%%
+	\coordinate[yshift = -\columnsep] (evo specificity) at (evo scheme |- xlabel.south);
+	
+	\colorlet{start}{white}
+
+	\tikzset{
+		species-specificity/.style = {left color = tobacco!20, right color = maize!20, middle color = white},
+		light-specificity/.style = {left color = light!20, right color = dark!20, middle color = white},
+		temperature-specificity/.style = {left color = warm!20, right color = cold!20, middle color = white},
+		TRUE/.style = {fill = pgffillcolor!50!white},
+		FALSE/.style = {}
+	}
+	
+	\expandafter\def\csname species-specificity\endcsname{species specificity}
+	\expandafter\def\csname light-specificity\endcsname{light specificity}
+	\expandafter\def\csname temperature-specificity\endcsname{temperature specificity}
+	
+	\begin{pggfplot}[%
+		at = {(evo specificity)},
+		total width = \textwidth,
+		xlabel = number of \textit{in silico} evolution rounds,
+		ylabel = $\log_2$(specificity),
+		enlarge x limits = {abs = 1, rel = 0.005},
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		title is csname,
+		title style from name,
+		ytick = {-12, -10, ..., 12},
+		xticklabels = {12, 6, 0, 6, 12},
+		legend columns = 2,
+		legend style = {anchor = north east, at = {(1, 1)}},
+		legend image width = .75\baselineskip,
+		tight y
+	]{evolution_specificity}
+	
+		\pggf_annotate(
+			zeroline,
+			manual legend = {\textbf{objective:} = {empty legend}},
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .25) -- (-.25, 8.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{tobacco}}};
+				\draw[thick, -Latex] (6.25, -.25) -- (6.25, -8.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{maize}}};
+			},
+			manual legend = {
+				tobacco-specific = {violin legend = y, fill = tobacco, fill opacity = .5},
+				\relax = {empty legend},
+				maize-specific = {violin legend = y, fill = maize, fill opacity = .5}
+			},
+			only facet = 1
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .5) -- (-.25, 8.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{light}}};
+				\draw[thick, -Latex] (6.25, -.5) -- (6.25, -8.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{dark}}};
+			},
+			manual legend = {
+				light-specific = {violin legend = y, fill = light, fill opacity = .5},
+				\relax = {empty legend},
+				dark-specific = {violin legend = y, fill = dark, fill opacity = .5}
+			},
+			only facet = 2
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .5) -- (-.25, 8.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{warm}}};
+				\draw[thick, -Latex] (6.25, -.5) -- (6.25, -8.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{cold}}};
+			},
+			manual legend = {
+				warm-specific = {violin legend = y, fill = warm, fill opacity = .5},
+				\relax = {empty legend},
+				cold-specific = {violin legend = y, fill = cold, fill opacity = .5}
+			},
+			only facet = 3
+		)
+	
+		\pggf_violin(
+			style from column = {fill = color, fade},
+			cld = {anchor = south, text depth = 0pt}{max},
+			forget plot
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{evo scheme}
+	\subfiglabel{evo rounds}
+	\subfiglabel{evo specificity}
+
+\end{tikzpicture}

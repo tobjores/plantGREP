@@ -1,0 +1,10 @@
+file	source	date
+goslim_plant.obo	https://current.geneontology.org/ontology/subsets/goslim_plant.obo	8/22/2024
+gprofiler_full_athaliana.ENSG.gmt	g:Profiler	8/22/2024
+gprofiler_full_sbicolor.ENSG.gmt	g:Profiler	8/22/2024
+gprofiler_full_slycopersicum.ENSG.gmt	g:Profiler	8/22/2024
+gprofiler_full_zmays.ENSG.gmt	g:Profiler	8/22/2024
+GOslim_At.gmt	generated using 'Create GO slim from GMT using OBO' of 'GMT Helper' (https://biit.cs.ut.ee/gmt-helper/#)	8/22/2024
+GOslim_Sb.gmt	generated using 'Create GO slim from GMT using OBO' of 'GMT Helper' (https://biit.cs.ut.ee/gmt-helper/#)	8/22/2024
+GOslim_Sl.gmt	generated using 'Create GO slim from GMT using OBO' of 'GMT Helper' (https://biit.cs.ut.ee/gmt-helper/#)	8/22/2024
+GOslim_Zm.gmt	generated using 'Create GO slim from GMT using OBO' of 'GMT Helper' (https://biit.cs.ut.ee/gmt-helper/#)	8/22/2024

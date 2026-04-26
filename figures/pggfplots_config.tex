@@ -1,0 +1,122 @@
+%%% set raw data directory
+\pggfdatadir{rawData/}
+
+
+%%% set pggfplot options
+\newlength{\groupplotsep}
+\setlength{\groupplotsep}{0.75mm}
+
+\pggfset{
+	xlabel height = 7.85mm,
+	ylabel width = 9.97mm,
+	anchor = outer north west,
+	thin,
+	unbounded coords = jump,
+	axis background/.style = {fill = white},
+	label style = {node font = \fignormal, text depth = 0pt, align = center},
+	title font = \figlarge,
+	facet sep = \groupplotsep,
+	tickwidth = \groupplotsep,
+	tick label style = {node font = \figsmall, text depth = 0pt, /pgf/number format/fixed},
+	tick align = outside,
+	tick pos = lower,
+	every x tick label/.append style = {inner xsep = 0pt},
+	every y tick label/.append style = {inner ysep = 0pt},
+	every tick/.append style = {black, thin},
+	max space between ticks = 20,
+	scaled ticks = false,
+	legend style = {
+		node font = \figsmall,
+		font = \strut,
+		fill = none,
+		draw = none,
+		inner ysep = 0pt,
+		/tikz/every even column/.append style = {column sep = \groupplotsep},
+	},
+	legend cell align = right,
+	legend plot pos = right,
+	mark size = 1,
+	boxplot/whisker extend = {\pgfkeysvalueof{/pgfplots/boxplot/box extend} * 0.5},
+	boxplot/every median/.style = thick,
+	sample size = {node font = \figtiny, text depth = 0pt},
+	plot/diagonal/.default = {gray, dashed},
+	plot/diagonal*/.default = {gray, dashed},
+	pggf colorbar style = {
+		yticklabel style = {node font = \figtiny},
+		title style = {node font = \figsmall, inner sep = 0pt},
+		tick align = outside,
+		tick pos = lower,
+		tickwidth = \groupplotsep
+	},
+	origin as zero,
+	dendrogram style = {line cap = round, line join = round, semithick},
+	dendrogram connector = {gray},
+}
+
+\pgfplotsset{
+	boxplot/draw/average/.code = {},
+	every non boxed x axis/.style = {},
+	every non boxed y axis/.style = {},
+	xytick/.style = {xtick = {#1}, ytick = {#1}},
+	x decimals/.style = {x tick label style = {/pgf/number format/.cd, fixed, zerofill, precision = #1}},
+	y decimals/.style = {y tick label style = {/pgf/number format/.cd, fixed, zerofill, precision = #1}},
+	z decimals/.style = {z tick label style = {/pgf/number format/.cd, fixed, zerofill, precision = #1}},
+	decimals/.style = {x decimals = #1, y decimals = #1, z decimals = #1},
+}
+
+
+%%% variant of /tikz/fill that accepts 'none' as a color (`fill = none` disables filling, `fill* = none` uses color 'none' for filling)
+\makeatletter
+	\tikzset{
+		fill*/.code = {
+      \tikz@addoption{\pgfsetfillcolor{#1}}%
+      \def\tikz@fillcolor{#1}%
+    	\tikz@addmode{\tikz@mode@filltrue}%
+		}
+	}
+\makeatother
+
+
+%%% set default plot options
+\pggfset{
+	plot defaults = {bar}{fill opacity = .5},
+	plot defaults = {boxplot}{fill opacity = .5},
+	plot defaults = {violin}{fill opacity = .5},
+	plot defaults = {trendline}{Sienna1},
+	plot defaults = {label}{node font = \figsmall},
+	plot defaults = {stats}{node font = \figsmall},
+	plot defaults = {signif}{node font = \figsmall, inner xsep = 0pt, inner ysep = .2em, level distance = \baselineskip, shift same sample = false},
+	plot defaults = {zeroline}{thin},
+}
+
+
+%%% print ticklabels as range
+\makeatletter
+	\def\pggf@range#1to#2\relax{\pgfmathprintnumber{#1}--\pgfmathprintnumber{#2}}
+
+	\pggf@set{
+		xticklabels are range/.code = {%
+			\def\pgfplots@user@ticklabel@list@x{%
+				\pgfplotslistselectorempty\ticknum\of\pgfplots@xticklabels\to\tick%
+				\expandafter\pggf@range\tick\relax%
+			}%
+		}
+	}
+	
+	\newcommand{\pggf@bins}{\@ifnextchar[\pggf@bins@\pggf@bins@@}
+	\def\pggf@bins@[#1,#2]{%
+		\pgfmathprintnumber{#1}--\pgfmathprintnumber{#2}%
+	}
+	\def\pggf@bins@@(#1,#2]{%
+		\pgfmathprintnumber{#1}--\pgfmathprintnumber{#2}%
+	}
+	
+	\pggf@set{
+		xticklabels are bins/.code = {%
+			\def\pgfplots@user@ticklabel@list@x{%
+				\pgfplotslistselectorempty\ticknum\of\pgfplots@xticklabels\to\tick%
+				\expandafter\pggf@bins\tick\relax%
+			}%
+		}
+	}
+\makeatother

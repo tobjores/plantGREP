@@ -1,0 +1,27 @@
+\begin{tikzpicture}
+
+	%%% correlation of enhancer strength across tamsACR and eVal libraries %%%
+	\coordinate (cor) at (0, 0);
+	
+	\begin{pggfplot}[%
+		at = {(cor)},
+		total width = \textwidth,
+		xlabel = {\textbf{ACR library}: \enrichment},
+		ylabel = {\textbf{validation library}:\\\enrichment},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		ylabel add to width = .6\baselineskip,
+		tight y
+	]{tamsACR_eVal_cor}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

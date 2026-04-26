@@ -1,0 +1,408 @@
+\begin{tikzpicture}
+	
+	\colorlet{genotype}{gray}
+	\colorlet{phenotype}{OkabeIto4}
+	
+
+	%%% SlCLV3 promoter bashing %%%
+	\coordinate (SlCLV3 bashing) at (0, 0);
+	
+	\def\WT{WT}
+	\expandafter\def\csname CLV3p13\endcsname{\textit{slclv3\textsuperscript{pro-13}}}
+	\expandafter\def\csname CLV3p15\endcsname{\textit{slclv3\textsuperscript{pro-15}}}
+	\expandafter\def\csname CLV3p24\endcsname{\textit{slclv3\textsuperscript{pro-24}}}
+	\expandafter\def\csname CLV3p26\endcsname{\textit{slclv3\textsuperscript{pro-26}}}
+	
+	\pgfplotsset{
+		gRNA/.style = {arrows = -{Triangle[length = .9pt, width = .2cm]}, OkabeIto2},
+		DNA/.style = {line width = .1cm, lightgray, -},
+		deletion/.style = {line width = .05cm, OkabeIto7, densely dashed, -},
+		xaxis/.is choice,
+		xaxis/genotype/.style = {
+			xtick = {-2.1, -1.5, -1, -.5},
+			extra x ticks = {0},
+			extra x tick labels = {ATG},
+			xticklabel style = {name = xticklabel},
+			xmin = -2.1,
+			xmax = 0,
+			x decimals = 1,
+		},
+		xaxis/phenotype/.style = {
+			xmin = -3.5
+		}		
+	}
+	
+	\begin{pggfplot}[%
+		at = {(SlCLV3 bashing)},
+		total width = \twocolumnwidth,
+		height = 2cm,
+		xlabel = {\vphantom{position relative to}\\\vphantom{\textit{ZmCLE7} ATG (kb)}},
+		ylabel = {\textit{SlCLV3}\\promoter allele},
+		ylabel style = {xshift = -2cm/12},
+		ylabel add to width = 4\baselineskip,
+		label each x axis,
+		enlargelimits = 0,
+		ytick = {1, ..., 5},
+		yticklabels are csnames,
+		title color from name,
+		axis background/.style = {fill = none},
+		empty facet warning = false,
+		tight y
+	]{SlCLV3_alleles}
+	
+		\pggf_quiver(
+			data = SlCLV3_alleles_DNA,
+			DNA
+		)
+		
+		\pggf_quiver(
+			data = SlCLV3_alleles_deletion,
+			deletion
+		)
+		
+		\pggf_quiver(
+			data = SlCLV3_alleles_gRNA,
+			gRNA
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\coordinate (sep) at (-1.0805, \pggfymax);
+			},
+			only facet = 1
+		)
+		
+		\pggf_annotate(
+			zeroline*,
+			only facet = 2
+		)
+		
+		\pggf_boxplot(
+			data = SlCLV3_locules,
+			fill = OkabeIto7,
+			only facet = 2
+		)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{tomatoFruit} at ($(pggfplot c2r1.north east) + (-.3, -.3)$);
+	
+	% xlabels
+	\node[anchor = north, align = center] at (pggfplot c1r1 |- xlabel.north) {position relative to\\\textit{SlCLV3} ATG (kb)};
+	\node[anchor = north, align = center] at (pggfplot c2r1 |- xlabel.north) {locule number per fruit};
+	
+	% save coordinates
+	\coordinate (start) at (pggfplot c1r1.west |- xticklabel.south);
+	\coordinate (end) at (pggfplot c1r1.east |- xticklabel.south);
+	
+	
+	%%% SlCLV3 Plant STARR-seq %%%
+	\coordinate[yshift = -\columnsep] (SlCLV3 STARR) at (SlCLV3 bashing |- xlabel.south);
+	
+	\tikzset{
+		ROIstart/.store in = \ROIstart,
+		ROIend/.store in = \ROIend
+	}
+
+	\begin{pggfplot}[%
+		at = {(SlCLV3 STARR)},
+		total width = \twocolumnwidth,
+		xlabel = {position relative to \textit{SlCLV3} ATG (kb)},
+		ylabel = \enrichment,
+		xmin = -2.1,
+		xmax = 0,
+		enlarge x limits = 0,
+		xtick = {-2.1, -1.8, ..., -.1},
+		extra x ticks = {0},
+		extra x tick labels = {ATG},
+		x decimals = 1,
+		row title = {Plant STARR-seq (\usename{dark})},
+		row title color = dark,
+		axis background/.style = {fill = none},
+		legend style = {at = {(1, 1)}},
+		every legend image post/.append style = {very thick, arrows = -{Latex[scale = .67]}},
+		legend image width = transformdirectionx(0.17),
+		tight y
+	]{SlCLV3_PlantSTARRseq}
+		
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\coordinate (sep 2) at (-1.0805, \pggfymin);
+				\fill[dark, fill opacity = .1] (\ROIstart, \pggfymin) coordinate (ROI Sl1) rectangle (\ROIend, \pggfymax) coordinate (ROI Sl2);
+			},
+			manual legend = {
+				experiment = {black},
+				prediction = {35Senhancer}
+			}
+		)
+	
+		\pggf_quiver(
+			data = SlCLV3_PlantSTARRseq_prediction,
+			35Senhancer,
+			very thick,
+			arrows = -{Latex[scale = .67]},
+		)
+	
+		\pggf_quiver(
+			data = SlCLV3_PlantSTARRseq_experiment,
+			black,
+			very thick,
+			arrows = -{Latex[scale = .67]},
+		)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{dark} at ($(pggfplot c1r1.north west) + (.3, -.3)$);
+	
+	% connection to previous plot
+	\begin{pgfonlayer}{background}
+		\draw[gray] (start) to[out = -90, in = 90] (pggfplot c1r1.north west) (end) to[out = -90, in = 90, looseness = .75] (pggfplot c1r1.north east);
+		\draw[gray, dashed] (sep) -- (sep |- start) to[out = -90, in = 90] (sep 2 |- pggfplot c1r1.north) -- (sep 2);
+	\end{pgfonlayer}
+	
+	
+	
+	%%% ZmCLE7 promoter bashing %%%
+	\coordinate (ZmCLE7 bashing) at (SlCLV3 bashing -| \textwidth - \twocolumnwidth, 0);
+	
+	\expandafter\def\csname CLE7p1\endcsname{\textit{CLE7\textsuperscript{CR-pro1}}}
+	\expandafter\def\csname CLE7p4\endcsname{\textit{CLE7\textsuperscript{CR-pro4}}}
+	\expandafter\def\csname CLE7p6\endcsname{\textit{CLE7\textsuperscript{CR-pro6}}}
+	
+	\pgfplotsset{
+		xaxis/genotype/.style = {
+			xtick = {-2, -1.5, ..., -.1},
+			extra x ticks = {0},
+			extra x tick labels = {ATG},
+			xticklabel style = {name = xticklabel},
+			xmin = -2.313,
+			xmax = 0,
+			x decimals = 1,
+		},
+		xaxis/phenotype/.style = {
+			xtick = {0, .2, ..., 1.5},
+			x decimals = 1,
+			xmin = -.15,
+			xmax = 1.39
+		}		
+	}
+	
+	\begin{pggfplot}[%
+		at = {(ZmCLE7 bashing)},
+		total width = \twocolumnwidth,
+		height = 2cm,
+		xlabel = {\vphantom{position relative to}\\\vphantom{\textit{ZmCLE7} ATG (kb)}},
+		ylabel = {\textit{ZmCLE7}\\promoter allele},
+		ylabel style = {xshift = -.2cm},
+		ylabel add to width = 4\baselineskip,
+		label each x axis,
+		enlargelimits = 0,
+		ytick = {1, ..., 4},
+		yticklabels are csnames,
+		title color from name,
+		axis background/.style = {fill = none},
+		empty facet warning = false,
+		tight y
+	]{ZmCLE7_alleles}
+	
+		\pggf_quiver(
+			data = ZmCLE7_alleles_DNA,
+			DNA
+		)
+		
+		\pggf_quiver(
+			data = ZmCLE7_alleles_deletion,
+			deletion
+		)
+		
+		\pggf_quiver(
+			data = ZmCLE7_alleles_gRNA,
+			gRNA
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\coordinate (sep) at (-0.6665, \pggfymax);
+				\coordinate (sep 2) at (-1.5005, \pggfymax);
+			},
+			only facet = 1
+		)
+		
+		\pggf_bar(
+			data = ZmCLE7_expression,
+			xbar,
+			fill = OkabeIto5,
+			draw = black,
+			x error = {se},
+			error bars/error bar style = {black, mark size = 2.5},
+			only facet = 2
+		)
+		
+		\pggf_annotate(
+			zeroline*,
+			only facet = 2
+		)
+		
+		\pggf_scatter(
+			data = ZmCLE7_expression,
+			y filter/.expression = {(y == 3 && x == 0.498057387) ? y - .15 : ((y == 3 && x == 0.499394362) ? y + .15 : y)},
+			only facet = 2
+		)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{maize} at ($(pggfplot c2r1.north east) + (-.3, -.3)$);
+	
+	% xlabels
+	\node[anchor = north, align = center] at (pggfplot c1r1 |- xlabel.north) {position relative to\\\textit{ZmCLE7} ATG (kb)};
+	\node[anchor = north, align = center] at (pggfplot c2r1 |- xlabel.north) {\textit{ZmCLE7} expression};
+	
+	% save coordinates
+	\coordinate (start) at (pggfplot c1r1.west |- xticklabel.south);
+	\coordinate (start top) at (pggfplot c1r1.west);
+	\coordinate (end) at (pggfplot c1r1.east |- xticklabel.south);
+	
+	
+	%%% ZmCLE7 %%%
+	\coordinate (ZmCLE7 plantGREP) at (SlCLV3 STARR -| ZmCLE7 bashing);
+	
+	\begin{pggfplot}[%
+		at = {(ZmCLE7 plantGREP)},
+		total width = \twocolumnwidth,
+		xlabel = {position relative to \textit{ZmCLE7} ATG (kb)},
+		ylabel = \enrichment,
+		xmin = -2.313,
+		xmax = 0,
+		enlarge x limits = 0,
+		xtick = {-2.4, -2.1, ..., -.1},
+		extra x ticks = {0},
+		extra x tick labels = {ATG},
+		x decimals = 1,
+		row title = {plantGREP (\usename{maize})},
+		row title color = maize,
+		axis background/.style = {fill = none},
+		tight y
+	]{ZmCLE7_prediction_points}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\coordinate (sep 3) at (-0.6665, \pggfymin);
+				\coordinate (sep 4) at (-1.5005, \pggfymin);
+				\fill[maize, fill opacity = .15] (\ROIstart, \pggfymin) coordinate (ROI Zm1) rectangle (\ROIend, \pggfymax) coordinate (ROI Zm2);
+			}
+		)
+		
+		\pggf_line(
+			data = ZmCLE7_prediction_lines,
+			35Senhancer,
+			thick,
+			on layer = axis foreground
+		)
+		
+		\pggf_scatter(
+			35Senhancer,
+			opacity = .15
+		)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{maize} at ($(pggfplot c1r1.north west) + (.3, -.3)$);
+	
+	% connection to previous plot
+	\begin{pgfonlayer}{background}
+		\draw[gray] (start top) -- (start) to[out = -90, in = 90] (pggfplot c1r1.north west) (end) to[out = -90, in = 90, looseness = .75] (pggfplot c1r1.north east);
+		\draw[gray, dashed] (sep) -- (sep |- start) to[out = -90, in = 90, looseness = .75] (sep 3 |- pggfplot c1r1.north) -- (sep 3) (sep 2) -- (sep 2 |- start) to[out = -90, in = 90] (sep 4 |- pggfplot c1r1.north) -- (sep 4);
+	\end{pgfonlayer}
+	
+	
+	%%% DeepLIFT predictions for best SlCLV3 fragment %%%
+	\coordinate[yshift = -\columnsep] (SlCLV3 DeepLIFT) at (SlCLV3 bashing |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(SlCLV3 DeepLIFT)},
+		total width = \textwidth,
+		height = 1.5cm,
+		xlabel = {position relative to \textit{SlCLV3} ATG (bp)},
+		ylabel = contribution\\score,
+		ylabel add to width = 8pt,
+		col title = DeepLIFT (\usename{dark}),
+		col title color = dark,
+		enlarge x limits = 0,
+		ytick = {-0.2, -0.1, ..., 0.3},
+		xtick = {-1550, -1540, ..., -1350}
+	]{SlCLV3_DeepLIFT}
+		
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\fill[dark, fill opacity = .1] (-1503.5, \pggfymin) rectangle (-1498.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {MYB};
+				\fill[dark, fill opacity = .1] (-1492.5, \pggfymin) rectangle (-1480.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {split bZIP?};
+				\fill[dark, fill opacity = .1] (-1471.5, \pggfymin) rectangle (-1465.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {MYB?};
+				\fill[dark, fill opacity = .1] (-1432.5, \pggfymin) rectangle (-1427.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {MYB};
+				\fill[dark, fill opacity = .1] (-1412.5, \pggfymin) rectangle (-1405.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {bZIP};
+				\fill[dark, fill opacity = .1] (-1392.5, \pggfymin) rectangle (-1387.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {MYB};
+				\fill[dark, fill opacity = .1] (-1376.5, \pggfymin) rectangle (-1370.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {MYB};
+			}
+		)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{dark} at ($(pggfplot c1r1.north west) + (.3, -.3)$);
+	
+	\begin{pgfonlayer}{background}
+		\draw[gray] (ROI Sl1) -- (pggfplot c1r1.above north west) (ROI Sl2 |- ROI Sl1) -- (pggfplot c1r1.above north east);
+	\end{pgfonlayer}
+	
+
+	%%% DeepLIFT predictions for best ZmCLE7 region %%%
+	\coordinate[yshift = -\columnsep] (ZmCLE7 DeepLIFT) at (SlCLV3 bashing |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(ZmCLE7 DeepLIFT)},
+		total width = \textwidth,
+		height = 1.5cm,
+		xlabel = {position relative to \textit{ZmCLE7} ATG (bp)},
+		ylabel = contribution\\score,
+		ylabel add to width = 8pt,
+		col title =  DeepLIFT (\usename{maize}),
+		col title color = maize,
+		enlarge x limits = 0,
+		ytick = {-0.1, -0.05, ..., 0.15},
+		xtick = {-550, -540, ..., -350}
+	]{ZmCLE7_DeepLIFT}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\fill[maize, fill opacity = .15] (-487.5, \pggfymin) rectangle (-480.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {bZIP};
+				\fill[maize, fill opacity = .15] (-428.5, \pggfymin) rectangle (-424.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {GATA};
+				\fill[maize, fill opacity = .15] (-409.5, \pggfymin) rectangle (-405.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {GATA};
+				\fill[maize, fill opacity = .15] (-403.5, \pggfymin) rectangle (-394.5, \pggfymax) node[pos = .5, anchor = north, yshift = .75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {2 $\times$ C2H2};
+				\fill[maize, fill opacity = .15] (-364.5, \pggfymin) rectangle (-360.5, \pggfymax) node[pos = .5, anchor = south, yshift = -.75cm, text = black, opacity = 1, text depth = 0pt, node font = \figsmall] {GATA};
+			}
+		)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	\planticon[height = .5cm]{maize} at ($(pggfplot c1r1.north west) + (.3, -.3)$);
+	
+	\begin{pgfonlayer}{background}
+		\draw[maize!50] (ROI Zm1) -- (pggfplot c1r1.above north west) (ROI Zm2 |- ROI Zm1) -- (pggfplot c1r1.above north east);
+	\end{pgfonlayer}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{SlCLV3 bashing}
+	\subfiglabel{SlCLV3 STARR}
+	\subfiglabel{ZmCLE7 bashing}
+	\subfiglabel{ZmCLE7 plantGREP}
+	\subfiglabel{SlCLV3 DeepLIFT}
+	\subfiglabel{ZmCLE7 DeepLIFT}
+
+\end{tikzpicture}

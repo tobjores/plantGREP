@@ -1,0 +1,730 @@
+%%% color definitions
+% define color-blind friendly palettes adapted from:
+% - M. Okabe and K. Ito (2008) Color universal design (CUD): How to make figures and presentations that are friendly to colorblind people. https://jfly.uni-koeln.de/color/
+% - P. Tol (2021) Colour Schemes. Technical note SRON/EPS/TN/09-002 3.2. https://sronpersonalpages.nl/~pault/data/colourschemes.pdf
+\pgfqkeys{/pggfplot}{
+	@colors/.is choice,
+	@colors/OkabeIto/.code = {% define OkabeIto colors
+		\definecolor{OkabeIto1}{HTML}{000000}
+		\definecolor{OkabeIto2}{HTML}{E69F00}
+		\definecolor{OkabeIto3}{HTML}{56B4E9}
+		\definecolor{OkabeIto4}{HTML}{009E73}
+		\definecolor{OkabeIto5}{HTML}{F0E442}
+		\definecolor{OkabeIto6}{HTML}{0072B2}
+		\definecolor{OkabeIto7}{HTML}{D55E00}
+		\definecolor{OkabeIto8}{HTML}{CC79A7}
+		\pgfplotscreateplotcyclelist{OkabeIto}{OkabeIto1,OkabeIto2,OkabeIto3,OkabeIto4,OkabeIto5,OkabeIto6,OkabeIto7,OkabeIto8}
+	},
+	@colors/OkabeIto*/.code = {% define OkabeIto* colors (uses a darker yellow as OkabeIto5 for easier visibility)
+		\pgfkeys{/pggfplot/@colors = OkabeIto}
+		\definecolor{OkabeIto5}{HTML}{F5C710}
+	},
+	@colors/PaulTolBright/.code = {% define PaulTolBright colors
+		\definecolor{PaulTolBright1}{HTML}{4477AA}
+		\definecolor{PaulTolBright2}{HTML}{EE6677}
+		\definecolor{PaulTolBright3}{HTML}{228833}
+		\definecolor{PaulTolBright4}{HTML}{CCBB44}
+		\definecolor{PaulTolBright5}{HTML}{66CCEE}
+		\definecolor{PaulTolBright6}{HTML}{AA3377}
+		\definecolor{PaulTolBright7}{HTML}{BBBBBB}
+		\pgfplotscreateplotcyclelist{PaulTolBright}{PaulTolBright1,PaulTolBright2,PaulTolBright3,PaulTolBright4,PaulTolBright5,PaulTolBright6,PaulTolBright7}
+	},
+	@colors/PaulTolVibrant/.code = {% define PaulTolVibrant colors
+		\definecolor{PaulTolVibrant1}{HTML}{EE7733}
+		\definecolor{PaulTolVibrant2}{HTML}{0077BB}
+		\definecolor{PaulTolVibrant3}{HTML}{33BBEE}
+		\definecolor{PaulTolVibrant4}{HTML}{EE3377}
+		\definecolor{PaulTolVibrant5}{HTML}{CC3311}
+		\definecolor{PaulTolVibrant6}{HTML}{009988}
+		\definecolor{PaulTolVibrant7}{HTML}{BBBBBB}
+		\pgfplotscreateplotcyclelist{PaulTolVibrant}{PaulTolVibrant1,PaulTolVibrant2,PaulTolVibrant3,PaulTolVibrant4,PaulTolVibrant5,PaulTolVibrant6,PaulTolVibrant7}
+	},
+	@colors/PaulTolMuted/.code = {% define PaulTolMuted colors
+		\definecolor{PaulTolMuted1}{HTML}{CC6677}
+		\definecolor{PaulTolMuted2}{HTML}{332288}
+		\definecolor{PaulTolMuted3}{HTML}{DDCC77}
+		\definecolor{PaulTolMuted4}{HTML}{117733}
+		\definecolor{PaulTolMuted5}{HTML}{88CCEE}
+		\definecolor{PaulTolMuted6}{HTML}{882255}
+		\definecolor{PaulTolMuted7}{HTML}{44AA99}
+		\definecolor{PaulTolMuted8}{HTML}{999933}
+		\definecolor{PaulTolMuted9}{HTML}{AA4499}
+		\definecolor{PaulTolMuted10}{HTML}{DDDDDD}
+		\pgfplotscreateplotcyclelist{PaulTolMuted}{PaulTolMuted1,PaulTolMuted2,PaulTolMuted3,PaulTolMuted4,PaulTolMuted5,PaulTolMuted6,PaulTolMuted7,PaulTolMuted8,PaulTolMuted9,PaulTolMuted10}
+	},
+	@colors/PaulTolLight/.code = {% define PaulTolLight colors
+		\definecolor{PaulTolLight1}{HTML}{77AADD}
+		\definecolor{PaulTolLight2}{HTML}{EE8866}
+		\definecolor{PaulTolLight3}{HTML}{EEDD88}
+		\definecolor{PaulTolLight4}{HTML}{FFAABB}
+		\definecolor{PaulTolLight5}{HTML}{99DDFF}
+		\definecolor{PaulTolLight6}{HTML}{44BB99}
+		\definecolor{PaulTolLight7}{HTML}{BBCC33}
+		\definecolor{PaulTolLight8}{HTML}{AAAA00}
+		\definecolor{PaulTolLight9}{HTML}{DDDDDD}
+		\pgfplotscreateplotcyclelist{PaulTolLight}{PaulTolLight1,PaulTolLight2,PaulTolLight3,PaulTolLight4,PaulTolLight5,PaulTolLight6,PaulTolLight7,PaulTolLight8,PaulTolLight9}
+	}
+}
+
+% define colors based on package option `colors`
+\def\pggf@default@cyclelist{}
+
+\ifcase\pggf@opts@color\relax% all
+	\pgfkeys{/pggfplot/@colors/.list = {OkabeIto,PaulTolBright,PaulTolVibrant,PaulTolMuted,PaulTolLight}}
+	\def\pggf@default@cyclelist{OkabeIto}
+\or% all*
+	\pgfkeys{/pggfplot/@colors/.list = {OkabeIto*,PaulTolBright,PaulTolVibrant,PaulTolMuted,PaulTolLight}}
+	\def\pggf@default@cyclelist{OkabeIto}
+\or% OkabeIto
+	\pgfkeys{/pggfplot/@colors = OkabeIto}
+	\def\pggf@default@cyclelist{OkabeIto}
+\or% OkabeIto*
+	\pgfkeys{/pggfplot/@colors = OkabeIto*}
+	\def\pggf@default@cyclelist{OkabeIto}
+\or% PaulTolBright
+	\pgfkeys{/pggfplot/@colors = PaulTolBright}
+	\def\pggf@default@cyclelist{PaulTolBright}
+\or% PaulTolVibrant
+	\pgfkeys{/pggfplot/@colors = PaulTolVibrant}
+	\def\pggf@default@cyclelist{PaulTolVibrant}
+\or% PaulTolMuted
+	\pgfkeys{/pggfplot/@colors = PaulTolMuted}
+	\def\pggf@default@cyclelist{PaulTolMuted}
+\or% PaulTolLight
+	\pgfkeys{/pggfplot/@colors = PaulTolLight}
+	\def\pggf@default@cyclelist{PaulTolLight}
+\or% PaulTol
+	\pgfkeys{/pggfplot/@colors/.list = {PaulTolBright,PaulTolVibrant,PaulTolMuted,PaulTolLight}}
+	\def\pggf@default@cyclelist{PaulTolLight}
+\fi
+
+
+%%% define extra markers
+% filled circle without border
+\pgfdeclareplotmark{solido}{%
+	\pgfpathcircle{\pgfpointorigin}{\pgfplotmarksize + .5\pgflinewidth}%
+	\pgfusepathqfill%
+}
+
+% filled square without border
+\pgfdeclareplotmark{solidsquare}{%
+	\pgfmathaddtolength{\pgfplotmarksize}{.5\pgflinewidth}%
+  \pgfpathrectangle{\pgfqpoint{-\pgfplotmarksize}{-\pgfplotmarksize}}{\pgfqpoint{2\pgfplotmarksize}{2\pgfplotmarksize}}%
+  \pgfusepathqfill%
+}
+
+% filled triangle without border
+\pgfdeclareplotmark{solidtriangle}{%
+	\pgfmathaddtolength{\pgfplotmarksize}{\pgflinewidth}%
+  \pgfpathmoveto{\pgfqpoint{0pt}{\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{-30}{\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{-150}{\pgfplotmarksize}}%
+  \pgfpathclose%
+  \pgfusepathqfill%
+}
+
+% filled diamond without border
+\pgfdeclareplotmark{soliddiamond}{%
+	\pgfmathaddtolength{\pgfplotmarksize}{\pgflinewidth}%
+  \pgfpathmoveto{\pgfqpoint{0pt}{\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpoint{.75\pgfplotmarksize}{0pt}}%
+  \pgfpathlineto{\pgfqpoint{0pt}{-\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpoint{-.75\pgfplotmarksize}{0pt}}%
+  \pgfpathclose%
+  \pgfusepathqfill%
+}
+
+% plot cycle list for the filled markers without borders
+\pgfplotscreateplotcyclelist{solid mark list}{mark=solido,mark=solidsquare,mark=solidtriangle,mark=soliddiamond}
+
+% filled hexagon without border for use in hexbin plots
+\pgfdeclareplotmark{hexagon}
+{%
+	\pgftransformyscale{\pggf@hex@yscale}
+	\pgfmathsetlength{\pggf@tmplen}{0.5\pgfplotmarksize / cos(30)}
+	\pgfpathmoveto{\pgfqpoint{0pt}{\pggf@tmplen}}
+	\pgfpathlineto{\pgfqpointpolar{150}{\pggf@tmplen}}
+	\pgfpathlineto{\pgfqpointpolar{210}{\pggf@tmplen}}
+	\pgfpathlineto{\pgfqpointpolar{270}{\pggf@tmplen}}
+	\pgfpathlineto{\pgfqpointpolar{330}{\pggf@tmplen}}
+	\pgfpathlineto{\pgfqpointpolar{30}{\pggf@tmplen}}
+	\pgfpathclose
+	\pgfusepathqfill
+}
+
+%% markers for logo plots
+% A
+\pgfdeclareplotmark{letterA}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{0}}%
+	\pgfpathlineto{\pgfpoint{.1}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{.2}{-.75}}%
+	\pgfpathlineto{\pgfpoint{-.2}{-.75}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{.16}{-.65}}%
+	\pgfpathlineto{\pgfpoint{0}{-.25}}%
+	\pgfpathlineto{\pgfpoint{-.16}{-.65}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% B
+\pgfdeclareplotmark{letterB}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{0}{-1}}%
+	\pgfpatharc{-90}{90}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{0}{-.55}}%
+	\pgfpatharc{-90}{90}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{0}{-.1}}%
+	\pgfpatharc{90}{-90}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{0}{-.55}}%
+	\pgfpatharc{90}{-90}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.9}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% C
+\pgfdeclareplotmark{letterC}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{-.725}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.275}}%
+	\pgfpatharc{180}{0}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{.3}{-.275}}%
+	\pgfpatharc{0}{180}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.725}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% D
+\pgfdeclareplotmark{letterD}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{0}{-1}}%
+	\pgfpatharc{-90}{0}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{.5}{-.275}}%
+	\pgfpatharc{0}{90}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{0}{-.1}}%
+	\pgfpatharc{90}{0}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{.3}{-.725}}%
+	\pgfpatharc{0}{-90}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.9}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% E
+\pgfdeclareplotmark{letterE}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.4}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.4}{-.55}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% F
+\pgfdeclareplotmark{letterF}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.4}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.4}{-.55}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% G
+\pgfdeclareplotmark{letterG}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{0}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.725}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.275}}%
+	\pgfpatharc{180}{0}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{.3}{-.275}}%
+	\pgfpatharc{0}{180}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.725}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{0}{-.55}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% H
+\pgfdeclareplotmark{letterH}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% I
+\pgfdeclareplotmark{letterI}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.25}{0}}%
+	\pgfpathlineto{\pgfpoint{-.25}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.9}}%
+	\pgfpathlineto{\pgfpoint{-.25}{-.9}}%
+	\pgfpathlineto{\pgfpoint{-.25}{-1}}%
+	\pgfpathlineto{\pgfpoint{.25}{-1}}%
+	\pgfpathlineto{\pgfpoint{.25}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.1}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.1}{-.1}}%
+	\pgfpathlineto{\pgfpoint{.25}{-.1}}%
+	\pgfpathlineto{\pgfpoint{.25}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% J
+\pgfdeclareplotmark{letterJ}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.725}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.725}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{.3}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% K
+\pgfdeclareplotmark{letterK}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{.24}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.5}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.24}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% L
+\pgfdeclareplotmark{letterL}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% M
+\pgfdeclareplotmark{letterM}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathlineto{\pgfpoint{0}{-.4}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{.3}{-.3}}%
+	\pgfpathlineto{\pgfpoint{0}{-.7}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.3}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% N
+\pgfdeclareplotmark{letterN}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{-.7}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.3}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% O
+\pgfdeclareplotmark{letterO}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{-.725}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.275}}%
+	\pgfpatharc{180}{0}{.5 and .275}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{.3}{-.275}}%
+	\pgfpatharc{0}{180}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.725}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% P
+\pgfdeclareplotmark{letterP}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{0}{-.55}}%
+	\pgfpatharc{-90}{90}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{0}{-.1}}%
+	\pgfpatharc{90}{-90}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% Q
+\pgfdeclareplotmark{letterQ}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{-.675}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.275}}%
+	\pgfpatharc{180}{0}{.5 and .275}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{.3}{-.275}}%
+	\pgfpatharc{0}{180}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.675}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{.5}{-.925}}%
+	\pgfpathlineto{\pgfpoint{.35}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.05}{-.775}}%
+	\pgfpathlineto{\pgfpoint{.1}{-.7}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% R
+\pgfdeclareplotmark{letterR}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{0}{-.55}}%
+	\pgfpatharc{-90}{90}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{0}{-.1}}%
+	\pgfpatharc{90}{-90}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.45}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.1}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{-.3}{-.55}}%
+	\pgfpathlineto{\pgfpoint{.24}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.5}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% S
+\pgfdeclareplotmark{letterS}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{-.275}}%
+	\pgfpatharc{0}{180}{.5 and .275}%
+	\pgfpathcurveto{\pgfpoint{-.5}{-.533}}{\pgfpoint{.3}{-.533}}{\pgfpoint{.3}{-.725}}%
+	\pgfpatharc{0}{-180}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.725}}%
+	\pgfpatharc{-180}{0}{.5 and .275}%
+	\pgfpathcurveto{\pgfpoint{.5}{-.467}}{\pgfpoint{-.3}{-.467}}{\pgfpoint{-.3}{-.275}}%
+	\pgfpatharc{180}{0}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{.5}{-.275}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% T
+\pgfdeclareplotmark{letterT}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.1}}%
+	\pgfpathlineto{\pgfpoint{.1}{-.1}}%
+	\pgfpathlineto{\pgfpoint{.1}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% U
+\pgfdeclareplotmark{letterU}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.725}}%
+	\pgfpatharc{0}{-180}{.5 and .275}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-.725}}%
+	\pgfpatharc{-180}{0}{.3 and .175}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% V
+\pgfdeclareplotmark{letterV}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{0}{-.75}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% W
+\pgfdeclareplotmark{letterW}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{0}{-.7}}%
+	\pgfpathlineto{\pgfpoint{.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{.15}{-.6}}%
+	\pgfpathlineto{\pgfpoint{0}{-.2}}%
+	\pgfpathlineto{\pgfpoint{-.15}{-.6}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% X
+\pgfdeclareplotmark{letterX}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{-1}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathclose%
+	\pgfpathmoveto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.3}{-1}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% Y
+\pgfdeclareplotmark{letterY}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{-.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-.5}}%
+	\pgfpathlineto{\pgfpoint{-.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{.1}{-1}}%
+	\pgfpathlineto{\pgfpoint{.1}{-.5}}%
+	\pgfpathlineto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{.3}{0}}%
+	\pgfpathlineto{\pgfpoint{0}{-.375}}%
+	\pgfpathlineto{\pgfpoint{-.3}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% Z
+\pgfdeclareplotmark{letterZ}{%
+	\pgftransformxscale{\pgfplotmarksize}%
+	\pgftransformyscale{\pggf@letterht}%
+	\pgfpathmoveto{\pgfpoint{.5}{0}}%
+	\pgfpathlineto{\pgfpoint{-.2}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-.9}}%
+	\pgfpathlineto{\pgfpoint{.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-1}}%
+	\pgfpathlineto{\pgfpoint{.2}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{-.1}}%
+	\pgfpathlineto{\pgfpoint{-.5}{0}}%
+	\pgfpathclose%
+	\pgfusepathqfill%
+}
+
+% colors
+\definecolor{logoplotGreen}{HTML}{008000}
+\definecolor{logoplotBlue}{HTML}{0000FF}
+\definecolor{logoplotYellow}{HTML}{FFA600}
+\definecolor{logoplotRed}{HTML}{FF0000}
+\definecolor{logoplotPurple}{HTML}{800080}
+
+\pgfplotsforeachungrouped \x/\y in {%
+	A/FF0000,B/FF3B00,C/FF7600,D/FFB100,E/FFEB00,F/D8FF00,G/9DFF00,H/62FF00,I/27FF00,J/00FF14,K/00FF4E,L/00FF89,M/00FFC4,%
+	N/00FFFF,O/00C4FF,P/0089FF,Q/004EFF,R/0014FF,S/2700FF,T/6200FF,U/9D00FF,V/D800FF,W/FF00EB,X/FF00B1,Y/FF0076,Z/FF003B%
+}{\definecolor{letter\x col}{HTML}{\y}}
+
+\pgfplotsset{
+	letter colors/.style = {letter@colors/.list = {#1}},
+	letter@colors/.is choice,
+	letter@colors/multiple/.code 2 args = {\pgfplotsinvokeforeach{#1}{\colorlet{letter##1col}{#2}}},
+	letter@colors/DNA/.style = {letter colors = {A = logoplotGreen, C = logoplotBlue, G = logoplotYellow, T = logoplotRed}},
+	letter@colors/RNA/.style = {letter colors = {A = logoplotGreen, C = logoplotBlue, G = logoplotYellow, U = logoplotRed}},
+	letter@colors/protein/.style = {letter colors = chemistry},
+	letter@colors/charge/.style = {
+		letter colors = {
+			multiple = {D,E}{logoplotRed},
+			multiple = {H,K,R}{logoplotBlue},
+			multiple = {A,C,F,G,I,L,M,N,P,Q,S,T,V,W,Y}{gray}
+		}
+	},
+	letter@colors/chemistry/.style = {
+		letter colors = {
+			multiple = {D,E}{logoplotRed},
+			multiple = {H,K,R}{logoplotBlue},
+			multiple = {C,G,S,T,Y}{logoplotGreen},
+			multiple = {N,Q}{logoplotPurple},
+			multiple = {A,F,I,L,M,P,V,W}{black}
+		}
+	},
+	letter@colors/hydrophobicity/.style = {
+		letter colors = {
+			multiple = {A,G,H,P,S,T}{logoplotGreen},
+			multiple = {D,E,K,N,Q,R}{logoplotBlue},
+			multiple = {C,F,I,L,M,V,W,Y}{black}
+		}
+	},
+	letter@colors/rainbow/.code = {
+		\pgfplotsforeachungrouped \x/\y in {%
+			A/FF0000,B/FF3B00,C/FF7600,D/FFB100,E/FFEB00,F/D8FF00,G/9DFF00,H/62FF00,I/27FF00,J/00FF14,K/00FF4E,L/00FF89,M/00FFC4,%
+			N/00FFFF,O/00C4FF,P/0089FF,Q/004EFF,R/0014FF,S/2700FF,T/6200FF,U/9D00FF,V/D800FF,W/FF00EB,X/FF00B1,Y/FF0076,Z/FF003B%
+		}{\definecolor{letter\x col}{HTML}{\y}}
+	},
+	letter@colors/.unknown/.code = {\colorlet{letter\pgfkeyscurrentname col}{#1}}
+}
+
+
+%%% define default plot cycle list
+\ifcase\pggf@opts@cyclelist\relax% auto
+	\if\relax\pggf@default@cyclelist\relax\else
+		\pgfplotsset{cycle multi list/.expanded = {linestyles\noexpand\nextlist solid mark list\noexpand\nextlist \pggf@default@cyclelist}}
+	\fi
+\or% OkabeIto
+	\expandafter\in@\expandafter{\expandafter,\pggf@opts@color,}{,0,1,2,3,}%
+	\ifin@
+		\pgfplotsset{cycle multi list = {linestyles\nextlist solid mark list\nextlist OkabeIto}}
+	\else
+		\PackageError{pggfplot}{OkabeIto colors must be defined for option `cyclelist=OkabeIto` using e.g. `colors=OkabeIto`}{}
+	\fi
+\or% PaulTolBright
+	\expandafter\in@\expandafter{\expandafter,\pggf@opts@color,}{,0,1,4,8,}%
+	\ifin@
+		\pgfplotsset{cycle multi list = {linestyles\nextlist solid mark list\nextlist PaulTolBright}}
+	\else
+		\PackageError{pggfplot}{PaulTolBright colors must be defined for option `cyclelist=PaulTolBright` using e.g. `colors=PaulTolBright`}{}
+	\fi
+\or% PaulTolVibrant
+	\expandafter\in@\expandafter{\expandafter,\pggf@opts@color,}{,0,1,5,8,}%
+	\ifin@
+		\pgfplotsset{cycle multi list = {linestyles\nextlist solid mark list\nextlist PaulTolVibrant}}
+	\else
+		\PackageError{pggfplot}{PaulTolVibrant colors must be defined for option `cyclelist=PaulTolVibrant` using e.g. `colors=PaulTolVibrant`}{}
+	\fi
+\or% PaulTolMuted
+	\expandafter\in@\expandafter{\expandafter,\pggf@opts@color,}{,0,1,6,8,}%
+	\ifin@
+		\pgfplotsset{cycle multi list = {linestyles\nextlist solid mark list\nextlist PaulTolMuted}}
+	\else
+		\PackageError{pggfplot}{PaulTolMuted colors must be defined for option `cyclelist=PaulTolMuted` using e.g. `colors=PaulTolMuted`}{}
+	\fi
+\or% PaulTolLight
+	\expandafter\in@\expandafter{\expandafter,\pggf@opts@color,}{,0,1,7,8,}%
+	\ifin@
+		\pgfplotsset{cycle multi list = {linestyles\nextlist solid mark list\nextlist PaulTolLight}}
+	\else
+		\PackageError{pggfplot}{PaulTolLight colors must be defined for option `cyclelist=PaulTolLight` using e.g. `colors=PaulTolLight`}{}
+	\fi
+\fi

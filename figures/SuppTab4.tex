@@ -1,0 +1,95 @@
+% externalize TF motif logo plots
+\setbox1=\hbox{
+	\pgfplotstableforeachcolumnelement{id}\of\TFtable\as\TFid{%
+		\tikzsetnextfilename{TF_logos/\TFid}%
+		\begin{tikzpicture}
+			\begin{pggfplot}[%
+				width = 15cm,
+				height = 1cm,
+				enlargelimits = 0,
+				enlarge y limits = {upper = 0.25},
+				axis lines = none,
+				axis background/.style = {fill = none},
+				tight
+			]{TF_logos/\TFid}
+				\pggf_logo(letter colors = DNA)
+			\end{pggfplot}
+		\end{tikzpicture}%
+		\tikzsetnextfilename{TF_logos/\TFid_RC}%
+		\begin{tikzpicture}
+			\begin{pggfplot}[%
+				width = 15cm,
+				height = 1cm,
+				enlargelimits = 0,
+				enlarge y limits = {upper = 0.25},
+				axis lines = none,
+				axis background/.style = {fill = none},
+				tight
+			]{TF_logos/\TFid_RC}
+				\pggf_logo(letter colors = DNA)
+			\end{pggfplot}
+		\end{tikzpicture}%
+	}%
+}%
+
+% set up macros to parse table content
+\makeatletter
+	\def\motifid TF_#1{#1}
+	\def\TFfamilies #1 (#2){\def\slash{, }#1}
+	\def\TFlogo#1{\tikzifexternalizing{\relax}{\pgfimage[width = \TX@col@width, height = 1.75\baselineskip]{extFigures/TF_logos/#1}}}
+\makeatother
+
+% typeset table
+\rowcolors{2}{gray!10}{white}
+
+\pgfplotstabletypeset[
+	col sep = tab,
+	string type,
+	begin table = {\begin{xltabular}{\textwidth}},
+	end table = {\end{xltabular}},
+	every head row/.append style = {
+		output empty row,
+		before row = {%
+			\hiderowcolors
+			\caption{\captiontitle{Consensus binding motifs for transcription factors of the indicated families} Consensus motifs were obtained from ref. \textsuperscript{39}}\label{stab:TF_logos}\\% TODO: make sure reference is correct
+			\showrowcolors
+			\toprule
+			\rowcolor{white}\textbf{motif ID} & \textbf{motif logo (forward)} & \textbf{motif logo (reverse-complement)} & \textbf{transcription factor families} \\
+			\midrule
+			\endfirsthead
+			\toprule
+			\rowcolor{white}\textbf{motif ID} & \textbf{motif logo (forward)} & \textbf{motif logo (reverse-complement)} & \textbf{transcription factor families} \\
+			\midrule
+			\endhead
+			\bottomrule
+			\endfoot
+		},
+	},
+	create on use/logo/.style = {create col/copy = {id}},
+	create on use/RClogo/.style = {create col/copy = {id}},
+	columns = {id, logo, RClogo, family},
+	columns/id/.style = {
+		column type = r,
+  	postproc cell content/.style = {
+  		@cell content = \motifid##1
+  	}
+	},
+	columns/logo/.style={
+		column type = X,
+  	postproc cell content/.style = {
+  		@cell content = \TFlogo{##1}
+  	}
+	},
+	columns/RClogo/.style={
+		column type = X,
+  	postproc cell content/.style = {
+  		@cell content = \TFlogo{##1_RC}
+  	}
+	},
+	columns/family/.style = {
+		column type = l,
+  	postproc cell content/.style = {
+  		@cell content = \TFfamilies##1
+  	}
+	},
+]{\TFtable}

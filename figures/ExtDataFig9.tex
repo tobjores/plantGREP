@@ -1,0 +1,264 @@
+\begin{tikzpicture}
+
+	%%% linear model for TF hits %%%
+	\coordinate (lm hits) at (0, 0);
+	
+	% sequence
+	\node[anchor = west, node font = \figsmall\courier, shift = {(0, -1.25)}] (seq) at (lm hits) {%
+		\pgfmathsetseed{928}\randomNucs{10}\,\raisebox{.5ex}{\dots}\,\randomNucs{10}%
+	};
+	
+	\draw[very thick, -Latex] (seq.east) -- ++(.5, 0) coordinate (ohe);
+	
+	% TF hits
+	\node[anchor = west, node font = \figsmall] (hits) at (ohe) {
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrcrrr}%
+			\toprule%
+			\textbf{TF-1} & \textbf{TF-2} & \textbf{TF-3} & \raisebox{.5ex}{\textbf{\dots}} & \textbf{TF-70} & \textbf{TF-71} & \textbf{TF-72} \\%
+			\midrule%
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\raisebox{.5ex}{\dots} &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	\draw[very thick, -Latex] (hits.east) -- ++(.5, 0) coordinate[xshift = .3333em] (model);
+	
+	% model
+	\node[right = .05cm of model, align = flush right, font = \figsmall, yshift = -.5\baselineskip] (lm) {%
+		$\log_2(\text{enhancer strength}) =$\hspace*{7em}\\
+		$\beta_0 + \beta_1\text{TF-1} + \beta_2\text{TF-2} + \beta_3\text{TF-3} + \dots$\\
+		$+ \beta_{70}\text{TF-70} + \beta_{71}\text{TF-71} + \beta_{72}\text{TF-72}$%
+	};
+	
+	\begin{pgfonlayer}{background}
+		\draw[fill = OkabeIto5!25, rounded corners] (model) |- ($(lm.north east) + (.05, .05cm + \baselineskip)$) node[pos = .75, anchor = north, fill = none, draw = none, text = black, font = \bfseries] (model top) {linear regression} |- ($(lm.south west) + (-.05, -.05)$) coordinate[pos = .25] (model out) coordinate[pos = .75] (model bottom) -- cycle;
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (model out) ++(.3333em, 0) -- ++(.5, 0) coordinate (predictions);
+	
+	% predictions
+	\pgfmathsetmacro{\predLight}{2 + rand * 4}
+	\pgfmathsetmacro{\predDark}{\predLight + rand * 0.5 * \predLight}
+	\pgfmathsetmacro{\predWarm}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predCold}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predMaize}{1.5 + rand * 3}
+	
+	\node[anchor = west, node font = \figsmall] (predictions) at (predictions) {%
+		\pgfmathsetseed{928}%
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrrr}%
+			\toprule%
+			\textbf{\usename{light}} & \textbf{\usename{dark}} & \textbf{\usename{warm}} & \textbf{\usename{cold}} & \textbf{\usename{maize}} \\%
+			\midrule%
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predLight} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predDark} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predWarm} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predCold} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predMaize} \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	% text
+	\node[anchor = south, font = \strut, yshift = .3em] at (seq |- model top.north) {170\,bp sequence};
+	\node[anchor = south, font = \strut, yshift = .3em] at (hits |- model top.north) {count occurence of transcription factor binding sites};
+	\node[anchor = south, font = \strut, yshift = .3em] at (model top.north) {linear model};
+	\node[anchor = south, font = \strut, yshift = .3em] (blub) at (predictions |- model top.north) {predict $\log_2$(enhancer strength)};
+	
+
+	%%% enhancer strength predictions from linear model based on TF hits %%%
+	\coordinate[yshift = -\columnsep] (cor hits) at (lm hits |- model bottom);
+	
+	\begin{pggfplot}[%
+		at = {(cor hits)},
+		total width = \textwidth,
+		xlabel = {\textbf{measurement}: \enrichment},
+		ylabel = {\textbf{prediction}:\\\enrichment},
+		facet 1/.append style = {
+			pggf colorbar = {%
+				title = count,
+				log2,
+				horizontal,
+				ytick = {0, 3, ..., 15}
+			}
+		},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		ylabel add to width = .6\baselineskip,
+	]{lm_TF_hits_predictions}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% linear model for TF scores %%%
+	\coordinate[yshift = -\columnsep] (lm scores) at (lm hits |- xlabel.south);
+	
+	% sequence
+	\node[anchor = west, node font = \figsmall\courier, shift = {(0, -1.25)}] (seq) at (lm scores) {%
+		\pgfmathsetseed{928}\randomNucs{10}\,\raisebox{.5ex}{\dots}\,\randomNucs{10}%
+	};
+	
+	\draw[very thick, -Latex] (seq.east) -- ++(.5, 0) coordinate (ohe);
+	
+	% TF hits
+	\node[anchor = west, node font = \figsmall] (hits) at (ohe) {
+		\pgfmathsetseed{928}%
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrcrrr}%
+			\toprule%
+			\textbf{TF-1} & \textbf{TF-2} & \textbf{TF-3} & \raisebox{.5ex}{\textbf{\dots}} & \textbf{TF-70} & \textbf{TF-71} & \textbf{TF-72} \\%
+			\midrule%
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} &
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} &
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} &
+			\raisebox{.5ex}{\dots} &
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} &
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} &
+			\pgfmathparse{rnd * random(3)}\pgfmathprintnumber[fixed, zerofill, precision = 2]{\pgfmathresult} \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	\draw[very thick, -Latex] (hits.east) -- ++(.5, 0) coordinate[xshift = .3333em] (model);
+	
+	% model
+	\node[right = .05cm of model, align = flush right, font = \figsmall, yshift = -.5\baselineskip] (lm) {%
+		$\log_2(\text{enhancer strength}) =$\hspace*{7em}\\
+		$\beta_0 + \beta_1\text{TF-1} + \beta_2\text{TF-2} + \beta_3\text{TF-3} + \dots$\\
+		$+ \beta_{70}\text{TF-70} + \beta_{71}\text{TF-71} + \beta_{72}\text{TF-72}$%
+	};
+	
+	\begin{pgfonlayer}{background}
+		\draw[fill = OkabeIto5!25, rounded corners] (model) |- ($(lm.north east) + (.05, .05cm + \baselineskip)$) node[pos = .75, anchor = north, fill = none, draw = none, text = black, font = \bfseries] (model top) {linear regression} |- ($(lm.south west) + (-.05, -.05)$) coordinate[pos = .25] (model out) coordinate[pos = .75] (model bottom) -- cycle;
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (model out) ++(.3333em, 0) -- ++(.5, 0) coordinate (predictions);
+	
+	% predictions
+	\pgfmathsetmacro{\predLight}{2 + rand * 4}
+	\pgfmathsetmacro{\predDark}{\predLight + rand * 0.5 * \predLight}
+	\pgfmathsetmacro{\predWarm}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predCold}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predMaize}{1.5 + rand * 3}
+	
+	\node[anchor = west, node font = \figsmall] (predictions) at (predictions) {%
+		\pgfmathsetseed{928}%
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrrr}%
+			\toprule%
+			\textbf{\usename{light}} & \textbf{\usename{dark}} & \textbf{\usename{warm}} & \textbf{\usename{cold}} & \textbf{\usename{maize}} \\%
+			\midrule%
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predLight} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predDark} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predWarm} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predCold} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predMaize} \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	% text
+	\node[anchor = south, font = \strut, yshift = .3em] at (seq |- model top.north) {170\,bp sequence};
+	\node[anchor = south, font = \strut, yshift = .3em] at (hits |- model top.north) {sum of transcription factor motif scores};
+	\node[anchor = south, font = \strut, yshift = .3em] at (model top.north) {linear model};
+	\node[anchor = south, font = \strut, yshift = .3em] (blub) at (predictions |- model top.north) {predict $\log_2$(enhancer strength)};
+	
+	
+	%%% enhancer strength predictions from linear model based on TF scores %%%
+	\coordinate[yshift = -\columnsep] (cor scores) at (cor hits |- model bottom);
+	
+	\begin{pggfplot}[%
+		at = {(cor scores)},
+		total width = \textwidth,
+		xlabel = {\textbf{measurement}: \enrichment},
+		ylabel = {\textbf{prediction}:\\\enrichment},
+		facet 1/.append style = {
+			pggf colorbar = {%
+				title = count,
+				log2,
+				horizontal,
+				ytick = {0, 3, ..., 15}
+			}
+		},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		ylabel add to width = .6\baselineskip,
+	]{lm_TF_scores_predictions}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% compare linear model coefficients %%%
+	\coordinate[yshift = -\columnsep] (coefficients) at (cor hits |- xlabel.south);
+	
+	\makeatletter
+	
+	\tikzset{
+		label TF/.code 2 args = {
+			\edef\tmpA{nan}
+			\edef\tmpB{#1}
+			\ifx\tmpA\tmpB\relax\else
+				\pgfkeysalso{pin = {[node font = \figsmall, black, inner sep = .1em]#1:\pgfmathprintnumber[precision = 0]{#2}}}
+			\fi
+		}
+	}
+	
+	\makeatother
+	
+	\begin{pggfplot}[%
+		at = {(coefficients)},
+		total width = \textwidth,
+		xlabel = \textbf{TFBS counts:} model coefficient,
+		ylabel = \textbf{TFBS scores:} model coefficient,
+		title is csname,
+		title color from name,
+		xytick = {-1.2, -.9, ..., 1.2},
+		ylabel add to width = .6\baselineskip,
+	]{lm_TF_coefficients}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_scatter(
+			color from column name,
+			nodes near coords = {},
+			nodes near coords align = {anchor = center},
+			nodes near coords style = {inner sep = 1.5pt, text = black, label TF = {\pin}{\TFid}},
+			pin distance = .5em,
+			visualization depends on = \thisrow{TF} \as \TFid,
+			visualization depends on = \thisrow{pin} \as \pin
+		)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{lm hits}
+	\subfiglabel{cor hits}
+	\subfiglabel{lm scores}
+	\subfiglabel{cor scores}
+	\subfiglabel{coefficients}
+
+\end{tikzpicture}

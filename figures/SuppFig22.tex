@@ -1,0 +1,78 @@
+\begin{tikzpicture}
+
+	\pggfset{
+		ylabel add to width = 2pt
+	}
+
+	%%% plantGREP ensemble accuracy at defined ensemble sizes %%%
+	\coordinate (raw) at (0, 0);
+	
+	\begin{pggfplot}[%
+		at = {(raw)},
+		total width = \twothirdcolumnwidth,
+		xlabel = ensemble size (number of models),
+		ylabel = prediction accuracy ($R^2$),
+		ytick = {.4, .45, ..., .8},
+		y decimals = 2,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+	]{plantGREP_ensemble_raw}
+	
+		\pggf_boxplot(
+			color from col name,
+			draw = black,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% plantGREP ensemble accuracy summary %%%
+	\coordinate (summary) at (raw -| \textwidth - \threecolumnwidth, 0);
+	
+	% get ymin and ymax from last plot
+	\pgfplotstableread[col sep = tab]{rawData/plantGREP_ensemble_raw_axes.tsv}\axistable
+	
+	\pgfplotstablegetelem{0}{ymin}\of\axistable
+	\edef\ymin{\expandonce{\pgfplotsretval}}
+	
+	\pgfplotstablegetelem{0}{ymax}\of\axistable
+	\edef\ymax{\expandonce{\pgfplotsretval}}
+	
+	\begin{pggfplot}[%
+		anchor = left of north west,
+		at = {(summary |- pggfplot c1r1.north)},
+		total width = \threecolumnwidth,
+		xlabel = ensemble size (number of models),
+		ylabel = prediction accuracy ($R^2$),
+		ymin = \ymin,
+		ymax = \ymax,
+		xtick = {1, 10, 20, ..., 50},
+		ytick = {.4, .45, ..., .8},
+		y decimals = 2,
+		line styles = {light,dark,warm,cold,maize},
+		enlarge x limits = {lower = 0},
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		legend columns = 5,
+		legend style = {anchor = south east, at = {(1, 1)}},
+	]{plantGREP_ensemble_summary}
+	
+		\pggf_line(
+			error = ribbon,
+			error ribbon style = {fill opacity = .5},
+			group column = condition,
+			thick
+		)
+	
+		\pggf_annotate(line legend)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{raw}
+	\subfiglabel{summary}
+
+\end{tikzpicture}

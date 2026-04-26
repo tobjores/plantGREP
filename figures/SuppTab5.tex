@@ -1,0 +1,35 @@
+\rowcolors{2}{gray!10}{white}
+
+\pgfplotstabletypeset[
+	col sep = tab,
+	string type,
+	begin table = {\begin{xltabular}{\textwidth}},
+	end table = {\end{xltabular}},
+	every head row/.append style = {
+		output empty row,
+		before row = {%
+			\hiderowcolors
+			\caption{\captiontitle{Oligonucleotides used in this study}}\label{stab:primer}\\%
+			\showrowcolors
+			\toprule
+			\rowcolor{white}\textbf{sequence} & \textbf{purpose} \\
+			\midrule
+			\endfirsthead
+			\toprule
+			\rowcolor{white}\textbf{sequence} & \textbf{purpose} \\
+			\midrule
+			\endhead
+			\bottomrule
+			\endfoot
+		},
+	},
+	columns/sequence/.style = {
+		column type = X,
+		postproc cell content/.style = {
+			@cell content = \courier\seqsplit{##1}
+		}
+	},
+	columns/purpose/.style = {
+		column type = {>{\raggedright\arraybackslash}m{.3\textwidth}}
+	}
+]{../data/extra_files/primer.tsv}

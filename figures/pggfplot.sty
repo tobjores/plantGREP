@@ -1,0 +1,2212 @@
+%--------------------------------------------
+%
+% Package pggfplot
+%
+% Provides a user-friendly interface to create complex plots from
+% preprocessed data.
+%
+% It is based on Till Tantau's PGF package and Christian Feuersänger's
+% pgfplots package and inspired by the ggplot2 library for R.
+%
+% Copyright 2026 by Tobias Jores.
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+%--------------------------------------------
+
+%%% load required packages
+\RequirePackage{etoolbox}
+\RequirePackage{pgfplots}
+\RequirePackage{pgfplotstable}
+\RequirePackage{pgfopts}
+
+\usepgfkeyslibrary{filtered}
+\pgfplotsset{compat = 1.18}
+\usepgfplotslibrary{statistics, groupplots, colormaps}
+
+
+%%% warnings from pggfplot package (warning will also be added to the .dpth file if image is being externalized)
+\newcommand{\pggf@warning}[1]{%
+	\PackageWarning{pggfplot}{#1}%
+	\ifcsname tikz@library@external@loaded\endcsname%
+		\tikzifexternalizing{\pgfexternalstorecommand{\string\PackageWarning{pggfplot}{#1}}}{}%
+	\fi%
+}
+
+
+%%% process package options
+\def\pggf@opts@color{0}
+\def\pggf@opts@cyclelist{0}
+
+\pgfkeys{
+	/pggfplot/.cd,
+	colors/.is choice,
+	colors/none/.code = {\def\pggf@opts@color{-1}},% don't define any colors
+	colors/all/.code = {\def\pggf@opts@color{0}},% define OkabeIto and all PaulTol* colors 
+	colors/all*/.code = {\def\pggf@opts@color{1}},% as all but uses the alternative OkabeIto* colors
+	colors/OkabeIto/.code = {\def\pggf@opts@color{2}},% define OkabeIto colors
+	colors/OkabeIto*/.code = {\def\pggf@opts@color{3}},% define OkabeIto* colors (uses a darker yellow as OkabeIto5 for easier visibility)
+	colors/PaulTolBright/.code = {\def\pggf@opts@color{4}},% define PaulTolBright colors
+	colors/PaulTolVibrant/.code = {\def\pggf@opts@color{5}},% define PaulTolVibrant colors
+	colors/PaulTolMuted/.code = {\def\pggf@opts@color{6}},% define PaulTolMuted colors
+	colors/PaulTolLight/.code = {\def\pggf@opts@color{7}},% define PaulTolLight colors
+	colors/PaulTol/.code = {\def\pggf@opts@color{8}},% define all PaulTol* colors
+	cyclelist/.is choice,
+	cyclelist/none/.code = {\def\pggf@opts@cyclelist{-1}}, % don't set any plotcyclelist
+	cyclelist/auto/.code = {\def\pggf@opts@cyclelist{0}},% automatically determine the plotcyclelist to use: no list for `colors=none`, OkabeIto(*) for `colors=all(*)`, PaulTolLight for `colors=PaulTol`, and the corresponding list for all other `color` keys
+	cyclelist/OkabeIto/.code = {\def\pggf@opts@cyclelist{1}},% use OkabeIto as plotcyclelist
+	cyclelist/PaulTolBright/.code = {\def\pggf@opts@cyclelist{2}},% use PaulTolBright as plotcyclelist
+	cyclelist/PaulTolVibrant/.code = {\def\pggf@opts@cyclelist{3}},% use PaulTolVibrant as plotcyclelist
+	cyclelist/PaulTolMuted/.code = {\def\pggf@opts@cyclelist{4}},% use PaulTolMuted as plotcyclelist
+	cyclelist/PaulTolLight/.code = {\def\pggf@opts@cyclelist{5}},% use PaulTolLight as plotcyclelist
+}
+
+\ProcessPgfPackageOptions{pggfplot}
+
+
+%%% input auxiliary files
+\input{pggfplot.colors+markers.tex}
+\input{pggfplot.legend_images.tex}
+
+
+%%% load pggfplot lua functions
+\directlua{pggfplot = require('pggfplot.lua')}
+
+
+%%% commands to set pggfplot options
+%% main user command to set pggf options
+% use: \pggfset{<options>}
+% keys not known in path `/pggf/...` are appended to the `/pgfplots/pggfplot` style invoked at the beginning of every pggfplot
+\newcommand{\pggfset}[1]{
+	\pgfkeyssavekeyfilterstateto{\pggf@restorekeyfilterstate}
+	\pgfkeys{
+		/handler config = save,
+		/handler config = full or existing,
+		/pgf/key filters/is known descendant of/.install key filter = /pggf,
+		/pgf/key filter handlers/append filtered to/.install key filter handler = \pggf@remainingoptions,
+	}
+	\def\pggf@remainingoptions{}
+	\pgfqkeysfiltered{/pggf}{#1}
+	\pgfplotsset{
+		pggfplot/.append style/.expand once = {\pggf@remainingoptions}
+	}
+	\pgfkeys{/handler config = restore}
+	\pggf@restorekeyfilterstate
+%	% for debugging: list forwareded keys
+%	\if\relax\pggf@remainingoptions\relax\else
+%		\pggf@warning{Forwarding keys: \pggf@remainingoptions\space to /pgfplots/pggfplot}
+%	\fi
+}
+
+%% set pggf options without key filtering/forwaring (use to define new keys on the `/pggf/` path)
+% use: \pggf@set{<options>}
+\newcommand{\pggf@set}[1]{
+	\pgfqkeys{/pggf}{#1}
+}
+
+% keys to save and restore the `/handler config`
+\pgfkeys{
+	/handler config/save/.code = {
+		\let\pggf@pgfkeys@case@three=\pgfkeys@case@three
+		\let\pggf@pgfkeys@ifexecutehandler=\pgfkeys@ifexecutehandler
+	},
+	/handler config/restore/.code = {
+		\let\pgfkeys@case@three=\pggf@pgfkeys@case@three
+		\let\pgfkeys@ifexecutehandler=\pggf@pgfkeys@ifexecutehandler
+	},
+}
+
+% key filter: execute only known keys on given path
+\pgfkeys{
+	/pgf/key filters/is known descendant of/.code = {%
+		\if\pgfkeyscasenumber0%
+			\pgfkeysfiltercontinuefalse
+		\else
+			\def\pgfkeysisdescendantof@impl##1#1##2\pgf@@eov{%
+			\def\pgfkeyspred@TMP{##1}%
+			\ifx\pgfkeyspred@TMP\pgfkeys@empty
+				\pgfkeysfiltercontinuetrue
+			\else
+				\pgfkeysfiltercontinuefalse
+			\fi
+			}%
+			\expandafter\pgfkeysisdescendantof@impl\pgfkeyscurrentkey#1\pgf@@eov
+		\fi
+	},%
+}
+
+% use in pggf code keys to set keys that should not be forwarded
+\newcommand{\pggf@unfiltered@pgfkeys}[1]{
+	\pgfkeysinterruptkeyfilter
+		\pgfkeys{#1}
+	\endpgfkeysinterruptkeyfilter
+}
+
+%% set options for pggfplot objects
+% use: \pggf@plot@set{<plot type>}{<plot id>}{<options>}
+\newcommand{\pggf@plot@set}[3]{
+	\pgfkeyssavekeyfilterstateto{\pggf@restorekeyfilterstate}
+	\pgfkeys{
+		/handler config = save,
+		/handler config = full or existing,
+		/pgf/key filters/is known descendant of/.install key filter = /pggf/plot,
+		/pgf/key filter handlers/append filtered to/.install key filter handler = \pggf@plot@remainingoptions,
+	}
+	\def\pggf@plot@remainingoptions{}
+	\pgfqkeysfiltered{/pggf/plot}{#3}
+	\pgfplotsset{
+		pggf@#1@#2/.append style/.expand once = {\pggf@plot@remainingoptions}
+	}
+	\pgfkeys{/handler config = restore}
+	\pggf@restorekeyfilterstate
+%	% for debugging: list forwareded keys
+%	\if\relax\pggf@plot@remainingoptions\relax\else
+%		\pggf@warning{Forwarding keys: \pggf@plot@remainingoptions\space to /pgfplots/pggf@#1@#2}
+%	\fi
+}
+
+
+%%% helper function for math in lua
+\newcommand{\pgfluamathsetmacro}[2]{%
+	\begingroup%
+		\pgfluamathparse{#2}%
+		\let#1=\pgfmathresult
+		\pgfmath@smuggleone{#1}%
+	\endgroup%
+}
+
+
+%%% define pggfplot options and styles
+\newcount\pggf@tmpct
+\newcount\pggf@plotID
+\newcount\pggf@labelID
+\newcount\pggf@markID
+
+\newif\ifpggf@tmpif
+\newif\ifpggf@facetted
+\newif\ifpggf@facet@wrap
+\newif\ifpggf@totalwidthaxisonly
+\newif\ifpggf@totalheightaxisonly
+\newif\ifpggf@tight@x
+\newif\ifpggf@tight@y
+\newif\ifpggf@detectoverfull
+\newif\ifpggf@noplotdata
+\newif\ifpggf@emptyfacetwarn
+\newif\ifpggf@samplesize
+\newif\ifpggf@innerxticks
+\newif\ifpggf@inneryticks
+\newif\ifpggf@innerxticklabs
+\newif\ifpggf@inneryticklabs
+\newif\ifpggf@innerxlabels
+\newif\ifpggf@innerylabels
+\newif\ifpggf@labeleachxaxis
+\newif\ifpggf@labeleachyaxis
+\newif\ifpggf@missinggroupwarn
+\newif\ifpggf@close@density
+\newif\ifpggf@signif
+\newif\ifpggf@dendro@x
+\newif\ifpggf@dendro@y
+
+\pggf@detectoverfulltrue
+\pggf@emptyfacetwarntrue
+\pggf@samplesizetrue
+\pggf@missinggroupwarntrue
+
+\def\pggf@coltitlesfromtable{true}
+\def\pggf@rowtitlesfromtable{true}
+\def\pggfcolname{}
+\def\pggfrowname{}
+
+\def\pggf@skipfacets{}
+\def\pggf@includefacets{}
+
+\def\pggf@facetcols{1}
+\def\pggf@facetrows{1}
+
+\def\pggf@wrap@cols{0}
+\def\pggf@wrap@facets{0}
+
+\def\pggf@scalewidth{1}
+\def\pggf@scaleheight{1}
+
+\def\pggf@xlabel{}
+\def\pggf@ylabel{}
+
+\def\pggf@coltitles{}
+\def\pggf@rowtitles{}
+\def\pggf@coltitlelines{1}
+\def\pggf@rowtitlelines{1}
+\def\pggf@coltitleheightrule{\pggf@coltitlefont\pgfmathsetlength{\pggf@tmplen}{(\pggf@coltitlelines - .3) * \baselineskip}\rule{0pt}{\pggf@tmplen}}
+\def\pggf@rowtitleheightrule{\pggf@rowtitlefont\pgfmathsetlength{\pggf@tmplen}{(\pggf@rowtitlelines - .3) * \baselineskip}\rule{0pt}{\pggf@tmplen}}
+\def\pggf@coltitletypeset#1{#1}
+\def\pggf@rowtitletypeset#1{#1}
+\def\pggf@coltitlefont{\normalsize}
+\def\pggf@rowtitlefont{\normalsize}
+
+\def\pggf@barwidth{.8}
+\def\pggf@boxwidth{.8}
+\def\pggf@violinwidth{.9}
+\def\pggf@jitter{.3}
+\def\pggf@shade{false}
+\def\pggf@shade@color{black}
+\def\pggf@shade@percent{50}
+\def\pggf@shade@boxplot{false}
+\def\pggf@violin@half{false}
+\def\pggf@violin@half@sep{.05}
+
+\def\pggf@scatter@names{}
+\def\pggf@line@names{}
+\def\pggf@density@names{}
+
+\def\pggf@label@macro{}
+
+\def\pggf@hex@bins{50}
+\def\pggf@colormap{viridis}
+
+\def\pggfridgescale{1}
+
+\def\pggf@signif@raise{rel = 0.05}
+\def\pggf@signif@extend{rel = 0.025}
+\def\pggf@signif@shiftsame{true}
+\def\pggf@signif@ignorehidden{false}
+
+\newlength{\pggf@tmplen}
+\newlength{\pggf@plotwidth}
+\newlength{\pggf@plotheight}
+\newlength{\pggf@totalplotwidth}
+\newlength{\pggf@totalplotheight}
+\newlength{\pggf@groupplothsep}
+\newlength{\pggf@groupplotvsep}
+\newlength{\pggf@ylabelwidth}
+\newlength{\pggf@xlabelheight}
+\newlength{\pggf@signif@leveldist}
+\newlength{\pggf@dendro@ylength}
+\newlength{\pggf@dendro@xlength}
+
+\setlength{\pggf@plotwidth}{3.5cm}
+\setlength{\pggf@plotheight}{3.5cm}
+\setlength{\pggf@groupplothsep}{1mm}
+\setlength{\pggf@groupplotvsep}{1mm}
+\setlength{\pggf@ylabelwidth}{45pt}
+\setlength{\pggf@xlabelheight}{45pt}
+\setlength{\pggf@signif@leveldist}{\baselineskip}
+\setlength{\pggf@dendro@ylength}{.5\pggf@ylabelwidth}
+\setlength{\pggf@dendro@xlength}{.5\pggf@xlabelheight}
+
+\colorlet{pggfcoltitlecolor}{gray}
+\colorlet{pggfrowtitlecolor}{gray}
+\colorlet{pggfplotcolor}{black}
+
+% set up pgfplots styles
+\pgfplotsset{
+	every facet/.style ={
+		/pggf/@coltitles,
+		/pggf/@rowtitles
+	},
+	facet 1/.style = {},
+	column 1/.style = {},
+	row 1/.style = {},
+	pggfplot/.append style = {
+		enlargelimits = 0,
+		extra description/.append code = {
+			\ifpggf@tight@x\else
+				\path (-\pggf@ylabelwidth, 0);
+			\fi
+			\ifpggf@tight@y\else
+				\path (0, -\pggf@xlabelheight);
+			\fi
+		}
+	},
+	pggfplot position/.style = {},
+	scale facet width/.store in = \pggf@scalewidth,
+	scale facet height/.store in = \pggf@scaleheight,
+	scale axes/.code = {
+		\pgfluamathsetmacro{\pggf@tmp}{\pggfxmax - \pggfxmin}
+		\pgfluamathsetmacro{\pggf@enlarge@x@lower}{\pggf@enlarge@x@lower + \pggf@enlarge@x@abslower / \pggf@tmp}
+		\pgfluamathsetmacro{\pggf@enlarge@x@upper}{\pggf@enlarge@x@upper + \pggf@enlarge@x@absupper / \pggf@tmp}
+		\pgfkeysalso{xmin/.expanded = {\pggfxmin - \pggf@enlarge@x@lower * \pggf@tmp}, xmax/.expanded = {\pggfxmax + \pggf@enlarge@x@upper * \pggf@tmp}}
+		\pgfluamathsetmacro{\pggf@tmp}{\pggfymax - \pggfymin}
+		\pgfluamathsetmacro{\pggf@enlarge@y@lower}{\pggf@enlarge@y@lower + \pggf@enlarge@y@abslower / \pggf@tmp}
+		\pgfluamathsetmacro{\pggf@enlarge@y@upper}{\pggf@enlarge@y@upper + \pggf@enlarge@y@absupper / \pggf@tmp}
+		\pgfkeysalso{ymin/.expanded = {\pggfymin - \pggf@enlarge@y@lower * \pggf@tmp}, ymax/.expanded = {\pggfymax + \pggf@enlarge@y@upper * \pggf@tmp}}
+	},
+	hexbin width/.store in = \pggf@hexbin@width,
+	hexbin shape/.store in = \pggf@hexbin@shape,
+}
+
+% set up pggfplot options
+\pggf@set{
+	at/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggfplot position/.append style = {at = {#1}}}},
+	shift/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggfplot position/.append style = {shift = {#1}}}},
+	xshift/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggfplot position/.append style = {xshift = {#1}}}},
+	yshift/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggfplot position/.append style = {yshift = {#1}}}},
+	width/.code = {\pgfmathsetlength{\pggf@plotwidth}{#1}},
+	height/.code = {\pgfmathsetlength{\pggf@plotheight}{#1}},
+	total width/.code = {\pggf@totalwidthaxisonlyfalse\pgfmathsetlength{\pggf@totalplotwidth}{#1}},
+	total height/.code = {\pggf@totalheightaxisonlyfalse\pgfmathsetlength{\pggf@totalplotheight}{#1}},
+	total width*/.code = {\pggf@totalwidthaxisonlytrue\pgfmathsetlength{\pggf@totalplotwidth}{#1}},
+	total height*/.code = {\pggf@totalheightaxisonlytrue\pgfmathsetlength{\pggf@totalplotheight}{#1}},
+	ylabel width/.code = {\pgfmathsetlength{\pggf@ylabelwidth}{#1}},
+	xlabel height/.code = {\pgfmathsetlength{\pggf@xlabelheight}{#1}},
+	ylabel add to width/.code = {\pgfmathsetlength{\pggf@ylabelwidth}{\pggf@ylabelwidth + #1}},
+	xlabel add to height/.code = {\pgfmathsetlength{\pggf@xlabelheight}{\pggf@xlabelheight + #1}},
+	xlabel/.store in = \pggf@xlabel,
+	ylabel/.store in = \pggf@ylabel,
+	every xlabel/.style = {},
+	every ylabel/.style = {},
+	xlabel style/.code = {\pgfkeysalso{every xlabel/.append style = {#1}}},
+	ylabel style/.code = {\pgfkeysalso{every ylabel/.append style = {#1}}},
+	label style/.code = {\pgfkeysalso{every xlabel/.append style = {#1}, every ylabel/.append style = {#1}}},
+	label each x axis/.is if = pggf@labeleachxaxis,
+	label each y axis/.is if = pggf@labeleachyaxis,
+	label each axis/.style = {label each x axis = {#1}, label each y axis = {#1}},
+	label each axis/.default = true,
+	label each axis = false,
+	facet h sep/.code = {\pgfmathsetlength{\pggf@groupplothsep}{#1}},
+	facet v sep/.code = {\pgfmathsetlength{\pggf@groupplotvsep}{#1}},
+	facet sep/.style = {facet h sep = #1, facet v sep = #1},
+	facet sep/.default = 1mm,
+	tight x/.is if = pggf@tight@x,
+	tight y/.is if = pggf@tight@y,
+	tight/.style = {tight x = {#1}, tight y = {#1}},
+	tight/.default = true,
+	detect overfull boxes/.is if = pggf@detectoverfull,
+	empty facet warning/.is if = pggf@emptyfacetwarn,
+	wrap cols/.code = {
+		\ifnum0<#1\relax
+			\edef\pggf@wrap@cols{#1}
+		\else
+			\PackageError{pggfplot}{`wrap cols` must be a number greater than 0}{}
+		\fi
+	},
+	skip facet/.store in = \pggf@skipfacets,
+	skip facets/.store in = \pggf@skipfacets,
+	only facet/.store in = \pggf@includefacets,
+	only facets/.store in = \pggf@includefacets,
+	thiscolname/.store in = \pggfcolname,
+	thisrowname/.store in = \pggfrowname,
+	inner x ticks/.is if = pggf@innerxticks,
+	inner y ticks/.is if = pggf@inneryticks,
+	inner ticks/.style = {inner x ticks = {#1}, inner y ticks = {#1}},
+	inner ticks/.default = true,
+	inner ticks,
+	inner x tick labels/.is if = pggf@innerxticklabs,
+	inner y tick labels/.is if = pggf@inneryticklabs,
+	inner tick labels/.style = {inner x tick labels = {#1}, inner y tick labels = {#1}},
+	inner tick labels/.default = true,
+	inner tick labels = false,
+	inner xlabels/.is choice,
+	inner xlabels/true/.code = {\pggf@innerxlabelstrue\pggf@labeleachxaxistrue},
+	inner xlabels/false/.code = {\pggf@innerxlabelsfalse},
+	inner xlabels/.default = true,
+	inner ylabels/.is choice,
+	inner ylabels/true/.code = {\pggf@innerylabelstrue\pggf@labeleachyaxistrue},
+	inner ylabels/false/.code = {\pggf@innerylabelsfalse},
+	inner ylabels/.default = true,
+	inner labels/.style = {inner xlabels = {#1}, inner ylabels = {#1}},
+	inner labels/.default = true,
+	inner labels = false,
+	xticklabels are csnames/.code = {
+		\def\pgfplots@user@ticklabel@list@x{%
+			\pgfplotslistselectorempty\ticknum\of\pgfplots@xticklabels\to\tick
+			\csname\tick\endcsname
+		}
+	},
+	yticklabels are csnames/.code = {
+		\def\pgfplots@user@ticklabel@list@y{%
+			\pgfplotslistselectorempty\ticknum\of\pgfplots@yticklabels\to\tick
+			\csname\tick\endcsname
+		}
+	},
+	ticklabels are csnames/.style = {xticklabels are csnames, yticklabels are csnames},
+	xmin/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {xmin = {#1}}}},
+	xmax/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {xmax = {#1}}}},
+	ymin/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {ymin = {#1}}}},
+	ymax/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {ymax = {#1}}}},
+	xtick/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {xtick = {#1}}}},
+	ytick/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {ytick = {#1}}}},
+	xticklabels/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {xticklabels = {#1}}}},
+	yticklabels/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {yticklabels = {#1}}}},
+	xticklabel/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {xticklabel = {#1}}}},
+	yticklabel/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/axis override/.append style = {yticklabel = {#1}}}},
+	enlarge x limits/.code = {\pggf@unfiltered@pgfkeys{/pggf/enlargexlimits/.cd, #1}},
+	enlargexlimits/lower/.store in = \pggf@enlarge@x@lower,
+	enlargexlimits/upper/.store in = \pggf@enlarge@x@upper,
+	enlargexlimits/both/.style = {upper = #1, lower = #1},
+	enlargexlimits/rel lower/.store in = \pggf@enlarge@x@lower,
+	enlargexlimits/rel upper/.store in = \pggf@enlarge@x@upper,
+	enlargexlimits/rel both/.style = {upper = #1, lower = #1},
+	enlargexlimits/rel/.style = {upper = #1, lower = #1},
+	enlargexlimits/abs lower/.store in = \pggf@enlarge@x@abslower,
+	enlargexlimits/abs upper/.store in = \pggf@enlarge@x@absupper,
+	enlargexlimits/abs both/.style = {abs upper = #1, abs lower = #1},
+	enlargexlimits/abs/.style = {abs both = #1},
+	enlargexlimits/.unknown/.code = {\edef\pggf@tmp{\noexpand\pgfkeysalso{both = \pgfkeyscurrentname}}\pggf@tmp},
+	enlarge y limits/.code = {\pggf@unfiltered@pgfkeys{/pggf/enlargeylimits/.cd, #1}},
+	enlargeylimits/lower/.store in = \pggf@enlarge@y@lower,
+	enlargeylimits/upper/.store in = \pggf@enlarge@y@upper,
+	enlargeylimits/both/.style = {upper = #1, lower = #1},
+	enlargeylimits/abs lower/.store in = \pggf@enlarge@y@abslower,
+	enlargeylimits/abs upper/.store in = \pggf@enlarge@y@absupper,
+	enlargeylimits/abs both/.style = {abs upper = #1, abs lower = #1},
+	enlargeylimits/abs/.style = {abs both = #1},
+	enlargeylimits/.unknown/.code = {\edef\pggf@tmp{\noexpand\pgfkeysalso{both = \pgfkeyscurrentname}}\pggf@tmp},
+	enlargelimits/.style = {enlarge x limits = {#1}, enlarge y limits = {#1}},
+	enlargelimits = {both = 0.05, abs both = 0},
+	colormap name/.store in = \pggf@colormap,
+	colormap/.code 2 args = {
+		\def\pggf@colormap{#1},
+		\pggf@unfiltered@pgfkeys{/pgfplots/colormap = {#1}{#2}}
+	},
+	/pgfplots/pggf colorbar/.style = {
+		colorbar,
+		colorbar style = {
+			name = pggf colorbar,
+			anchor = south east,
+			at = {(.975, .05)},
+			width = \baselineskip,
+			height = .4 * \pgfkeysvalueof{/pgfplots/parent axis height},
+			colormap name = \pggf@colormap,
+			yticklabel pos = left,
+			yticklabel style = {name = colorbar yticklabel, text depth = 0pt},
+			raw/.style = {},
+			log2/.style = {yticklabel = \pgfmathparse{2^\tick}\pgfmathprintnumber{\pgfmathresult}},
+			log2*/.style = {yticklabel = {$2^{\pgfmathprintnumber{\tick}}$}},
+			log10/.style = {yticklabel = \pgfmathparse{10^\tick}\pgfmathprintnumber{\pgfmathresult}},
+			log10*/.style = {yticklabel = {$10^{\pgfmathprintnumber{\tick}}$}},
+			horizontal/.is choice,
+			horizontal/true/.style = {
+				rotate = -90,
+				yticklabel style = {anchor = south, inner ysep = .3333em, inner xsep = 0pt},
+				at = {(.975, .025)},
+				title style = {at = {(colorbar yticklabel.north |- current axis.north)}, /pgfplots/every axis title shift = 0pt, rotate = -90},
+			},
+			horizontal/false/.style = {
+				title style = {at = {(colorbar yticklabel.west |- current axis.west)}, /pgfplots/every axis title shift = 0pt, rotate = 90},
+			},
+			horizontal/.default = true,
+			horizontal = false,
+			pggf@colorbar,
+			#1
+		}
+	},
+	pggf colorbar style/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@colorbar/.append style = {#1}}},
+	/pgfplots/pggf@colorbar/.style = {},
+	/tikz/colormap limits/.code = {\pggf@make@colormap#1\relax},
+	colormap 3 colors/.code n args = {3}{
+		\if\relax#1\relax\else
+			\colorlet{pggf 3 colormap min}{#1}
+		\fi
+		\if\relax#2\relax\else
+			\colorlet{pggf 3 colormap mid}{#2}
+		\fi
+		\if\relax#3\relax\else
+			\colorlet{pggf 3 colormap max}{#3}
+		\fi
+		\pgfkeysalso{%
+			colormap name = {pggf 3 colormap},
+			pggf colorbar style = {colorbar 3 colors},
+		}
+	},
+	colormap 3 colors/.default = {}{}{},
+	/pgfplots/colorbar 3 colors/.code = {
+		\pggf@make@colormap\pgfkeysvalueof{/pgfplots/point meta min},\pgfkeysvalueof{/pgfplots/point meta max}\relax	
+	},
+	hide legend/.is choice,
+	hide legend/true/.style = {execute at end axis = {\legend{};}},
+	hide legend/false/.style = {},
+	hide legend/.default = true,
+	scale ridges/.store in = \pggfridgescale,
+	show x dendrogram/.is choice,
+	show x dendrogram/true/.code = {\pggf@dendro@xtrue\pgfkeysalso{xlabel add to height = \pggf@dendro@xlength}},
+	show x dendrogram/false/.code = {\pggf@dendro@xfalse},
+	show x dendrogram/.default = true,
+	/tikz/dendrogram@x/.style = {},
+	/tikz/dendrogram@x@connector/.style = {draw, dotted},
+	/pgfplots/x dendrogram/.code = {
+		\ifpggf@dendro@x
+			\pgfkeysalso{
+				/pgfplots/xticklabel style = {alias = {pggf@xl\ticknum}},
+				xlabel style = {yshift = -\pggf@dendro@xlength},
+				extra description/.append code = {
+					\coordinate (dendrogram bottom) at (xticklabel cs: 0);
+					\foreach [count = \xi] \cA / \cB / \cH in {#1}{
+						\expandafter\pggf@dendro@parsecoord\cA,0\relax%
+						\expandafter\pggf@dendro@parsecoord\cB,0\relax%
+						\draw[dendrogram@x] (dendrogram bottom) ++(0pt, -\cH*\pggf@dendro@xlength) coordinate (pggf@tmpcoord) (pggf@\cA) -- (pggf@\cA |- pggf@tmpcoord) -| (pggf@\cB) coordinate[pos = .25] (pggf@c\xi);
+					}
+				}
+			}
+		\fi
+	},
+	x dendrogram height/.code = {
+		\ifpggf@dendro@x
+			\pggf@warning{`x dendrogram height` should be used before `show x dendrogram` to correctly adjust the x label height.}
+		\fi
+		\pgfmathsetlength{\pggf@dendro@xlength}{#1}
+	},
+	x dendrogram style/.code = {\pggf@unfiltered@pgfkeys{/tikz/dendrogram@x/.append style = {#1}}},
+	x dendrogram connector/.code = {
+		\def\pggf@tmpA{#1}
+		\def\pggf@tmpB{false}
+		\ifx\pggf@tmpA\pggf@tmpB
+			\pggf@unfiltered@pgfkeys{/tikz/dendrogram@x@connector/.style = {transparent}}
+		\else
+			\pggf@unfiltered@pgfkeys{/tikz/dendrogram@x@connector/.append style = {#1}}
+		\fi
+	},
+	show y dendrogram/.is choice,
+	show y dendrogram/true/.code = {\pggf@dendro@ytrue\pgfkeysalso{ylabel add to width = \pggf@dendro@ylength}},
+	show y dendrogram/false/.code = {\pggf@dendro@yfalse},
+	show y dendrogram/.default = true,
+	/tikz/dendrogram@y/.style = {},
+	/tikz/dendrogram@y@connector/.style = {draw, dotted},
+	/pgfplots/y dendrogram/.code = {
+		\ifpggf@dendro@y
+			\pgfkeysalso{
+				/pgfplots/yticklabel style = {alias = {pggf@yl\ticknum}},
+				ylabel style = {yshift = \pggf@dendro@ylength},
+				extra description/.append code = {
+					\coordinate (dendrogram bottom) at (yticklabel cs: 0);
+					\foreach [count = \xi] \cA / \cB / \cH in {#1}{
+						\expandafter\pggf@dendro@parsecoord\cA,1\relax%
+						\expandafter\pggf@dendro@parsecoord\cB,1\relax%
+						\draw[dendrogram@y] (dendrogram bottom) ++(-\cH*\pggf@dendro@ylength, 0pt) coordinate (pggf@tmpcoord) (pggf@\cA) -- (pggf@\cA -| pggf@tmpcoord) |- (pggf@\cB) coordinate[pos = .25] (pggf@c\xi);
+					}
+				}
+			}
+		\fi
+	},
+	y dendrogram height/.code = {
+		\ifpggf@dendro@y
+			\pggf@warning{`y dendrogram height` should be used before `show y dendrogram` to correctly adjust the y label width.}
+		\fi
+		\pgfmathsetlength{\pggf@dendro@ylength}{#1}
+	},
+	y dendrogram style/.code = {\pggf@unfiltered@pgfkeys{/tikz/dendrogram@y/.append style = {#1}}},
+	y dendrogram connector/.code = {
+		\def\pggf@tmpA{#1}
+		\def\pggf@tmpB{false}
+		\ifx\pggf@tmpA\pggf@tmpB
+			\pggf@unfiltered@pgfkeys{/tikz/dendrogram@y@connector/.style = {transparent}}
+		\else
+			\pggf@unfiltered@pgfkeys{/tikz/dendrogram@y@connector/.append style = {#1}}
+		\fi
+	},
+	show dendrograms/.style = {show x dendrogram = {#1}, show y dendrogram = {#1}},
+	show dendrograms/.default = true,
+	dendrogram height/.style = {x dendrogram height = {#1}, y dendrogram height = {#1}},
+	dendrogram style/.style = {x dendrogram style = {#1}, y dendrogram style = {#1}},
+	dendrogram connector/.style = {x dendrogram connector = {#1}, y dendrogram connector = {#1}},
+	/pgfplots/alphabet length/.store in = \pggf@logo@alphabet@len,
+}
+
+
+%%% set path to folder with raw data
+% use: \pggfdatadir{<(rel.) path to raw data folder>} (e.g. \pggfdatadir{rawData/})
+\newcommand{\pggfdatadir}[1]{
+	\def\pggf@datadir{\pggf@stripslash{#1}/}
+}
+
+\def\pggf@stripslash#1{\pggf@strip@slash{#1}#1\end/\end\eend}
+\def\pggf@strip@slash#1#2/\end#3\eend{\ifx\end#3\end#1\else#2\fi}
+
+\def\pggf@datadir{}
+
+
+%%% calculate plot width/height (if given as `total width` and/or `total height`)
+\newcommand{\pggf@calculatewidth}{
+	\ifdim0pt=\pggf@totalplotwidth\relax\else % if `total width` given
+		\pgfmathsetlength{\pggf@plotwidth}{\pggf@totalplotwidth}
+		\ifpggf@totalwidthaxisonly\else % if not starred version (i.e. don't ignore titles and labels)
+			\pgfmathsetlength{\pggf@plotwidth}{\pggf@plotwidth - \pggf@ylabelwidth - .5\pgflinewidth}
+			\ifx\pggf@rowtitles\empty\else % if title present
+				{\pggf@rowtitlefont\pgfmathparse{\pggf@plotwidth - ((\pggf@rowtitlelines - .15) * \baselineskip + 2 * \pgfkeysvalueof{/pgf/inner ysep})}\expandafter}\expandafter\setlength\expandafter{\expandafter\pggf@plotwidth\expandafter}\expandafter{\pgfmathresult pt}
+			\fi
+		\fi
+		\ifpggf@facetted % calculate width per facet
+			\pgfmathsetlength{\pggf@plotwidth}{(\pggf@plotwidth - (\pggf@facetcols - 1) * \pggf@groupplothsep) / \pggf@facetcols}
+		\fi
+	\fi
+}
+\newcommand{\pggf@calculateheight}{
+	\ifdim0pt=\pggf@totalplotheight\relax\else % if `total height` given
+		\pgfmathsetlength{\pggf@plotheight}{\pggf@totalplotheight}
+		\ifpggf@totalwidthaxisonly\else % if not starred version (i.e. don't ignore titles and labels)
+			\pgfmathsetlength{\pggf@plotheight}{\pggf@plotheight - \pggf@xlabelheight - .5\pgflinewidth}
+			\ifx\pggf@coltitles\empty\else % if title present
+				{\pggf@coltitlefont\pgfmathparse{\pggf@plotheight - ((\pggf@coltitlelines - .15) * \baselineskip + 2 * \pgfkeysvalueof{/pgf/inner xsep})}\expandafter}\expandafter\setlength\expandafter{\expandafter\pggf@plotheight\expandafter}\expandafter{\pgfmathresult pt}
+			\fi
+		\fi
+		\ifpggf@facetted % calculate height per facet
+			\pgfmathsetlength{\pggf@plotheight}{(\pggf@plotheight - (\pggf@facetrows - 1) * \pggf@groupplotvsep) / \pggf@facetrows}
+		\fi
+	\fi
+}
+
+
+%%% set up column and row titles
+\pggf@set{
+	col titles from table/.is choice,
+	col titles from table/true/.code = {\def\pggf@coltitlesfromtable{true}},
+	col titles from table/false/.code = {\def\pggf@coltitlesfromtable{false}},
+	col titles from table/save/.code = {\def\pggf@coltitlesfromtable{#1}},
+	col titles from table/.default = true,
+	row titles from table/.is choice,
+	row titles from table/true/.code = {\def\pggf@rowtitlesfromtable{true}},
+	row titles from table/false/.code = {\def\pggf@rowtitlesfromtable{false}},
+	row titles from table/save/.code = {\def\pggf@rowtitlesfromtable{#1}},
+	row titles from table/.default = true,
+	titles from table/.is choice,
+	titles from table/true/.style = {col titles from table = true, row titles from table = true},
+	titles from table/false/.style = {col titles from table = false, row titles from table = false},
+	titles from table/save/.style 2 args = {col titles from table = {save = #1}, row titles from table = {save = #2}},
+	titles from table/.default = true,
+	title/.store in = \pggf@coltitles,
+	col title/.code = {\def\pggf@coltitles{#1}\def\pggfcolname{#1}},
+	custom col titles/.style = {col titles from table = false, col title = {#1}},
+	row title/.code = {\def\pggf@rowtitles{#1}\def\pggfrowname{#1}},
+	custom row titles/.style = {row titles from table = false, row title = {#1}},
+	every col title/.style = {
+		fill = pggfcoltitlecolor!20,
+		minimum width = \pggf@scalewidth * \pggf@plotwidth,
+		name = col title,
+	},
+	every row title/.style = {
+		fill = pggfrowtitlecolor!20,
+		minimum width = \pggf@scaleheight * \pggf@plotheight,
+		name = row title,
+		rotate = -90
+	},
+	col title style/.code = {\pgfkeysalso{every col title/.append style = {#1}}},
+	row title style/.code = {\pgfkeysalso{every row title/.append style = {#1}}},
+	title style/.code = {\pgfkeysalso{every col title/.append style = {#1}, every row title/.append style = {#1}}},
+	title style = {
+		draw = black,
+		text depth = .15\baselineskip,
+		align = flush center,
+		anchor = south,
+		yshift = -.5\pgflinewidth
+	},
+	col title style from name/.code = {\pgfkeysalso{every col title/.append style = {\pggfcolname}}},
+	row title style from name/.code = {\pgfkeysalso{every row title/.append style = {\pggfrowname}}},
+	title style from name/.style = {col title style from name, row title style from name},
+	col title font/.store in = \pggf@coltitlefont,
+	row title font/.store in = \pggf@rowtitlefont,
+	title font/.style = {col title font = {#1}, row title font = {#1}},
+	col title lines/.store in = \pggf@coltitlelines,
+	row title lines/.store in = \pggf@rowtitlelines,
+	title lines/.style = {col title lines = #1, row title lines = #1},
+	title lines/.default = 1,
+	col title color/.code = {\colorlet{pggfcoltitlecolor}{#1}},
+	row title color/.code = {\colorlet{pggfrowtitlecolor}{#1}},
+	title color/.style = {col title color = {#1}, row title color = {#1}},
+	title color/.default = gray,
+	col title colors/.code = {
+		\pggf@tmpct=1\relax
+		\pgfplotsinvokeforeach{#1}{
+			\pggf@unfiltered@pgfkeys{/pgfplots/facet \the\pggf@tmpct/.append style = {/pggf/col title color = {##1}}}
+			\advance\pggf@tmpct by1\relax
+		}
+	},
+	row title colors/.code = {
+		\pggf@tmpct=1\relax
+		\pgfplotsinvokeforeach{#1}{
+			\pggf@unfiltered@pgfkeys{/pgfplots/row \the\pggf@tmpct/.append style = {/pggf/row title color = {##1}}}
+			\advance\pggf@tmpct by1\relax
+		}
+	}, 
+	col title color from name/.style = {col title style = {/pggf/col title color = \pggfcolname}},
+	row title color from name/.style = {row title style = {/pggf/row title color = \pggfrowname}},
+	title color from name/.style = {col title color from name, row title color from name},
+	col title color from table column/.code 2 args = {
+		\pgfplotstable@isloadedtable{#1}%
+			{\pgfplotstablecopy{#1}\to\pggf@tmptable}%
+			{\pgfplotstableread[col sep = tab]{#1}\pggf@tmptable}%
+		\ifpggf@facetted
+			\pggf@unfiltered@pgfkeys{
+				/pgfplots/every facet/.append code = {
+					\pgfmathint{\pgfplots@group@current@plot - 1}
+					\pgfplotstablegetelem{\pgfmathresult}{#2}\of{\pggf@tmptable}%
+					\colorlet{pggfcoltitlecolor}{\pgfplotsretval}
+				}
+			}
+		\else
+			\pggf@unfiltered@pgfkeys{
+				/pgfplots/pggfplot/.append code = {
+					\pgfplotstablegetelem{0}{#2}\of{\pggf@tmptable}%
+					\colorlet{pggfcoltitlecolor}{\pgfplotsretval}
+				}
+			}
+		\fi
+	},
+	row title color from table column/.code 2 args = {
+		\pgfplotstable@isloadedtable{#1}%
+			{\pgfplotstablecopy{#1}\to\pggf@tmptable}%
+			{\pgfplotstableread[col sep = tab]{#1}\pggf@tmptable}%
+		\ifpggf@facetted
+			\pggf@unfiltered@pgfkeys{
+				/pgfplots/every facet/.append code = {
+					\pgfmathint{\pgfplots@group@current@plot - 1}
+					\pgfplotstablegetelem{\pgfmathresult}{#2}\of{\pggf@tmptable}%
+					\colorlet{pggfrowtitlecolor}{\pgfplotsretval}
+				}
+			}
+		\else
+			\pggf@unfiltered@pgfkeys{
+				/pgfplots/pggfplot/.append code = {
+					\pgfplotstablegetelem{0}{#2}\of{\pggf@tmptable}%
+					\colorlet{pggfrowtitlecolor}{\pgfplotsretval}
+				}
+			}
+		\fi
+	},
+	@coltitles/.style = {
+		/pgfplots/extra description/.append code = {
+			\ifx\pggf@coltitles\empty\else % if coltitles
+				\ifpggf@facetted % if facet plot
+					\ifpggf@facet@wrap
+						\def\pggf@tmp{1}
+					\else
+						\def\pggf@tmp{\pgfplots@group@current@row}
+					\fi
+					\ifnum1=\pggf@tmp\relax % if first column
+						\foreach \x [count = \xi, expand list] in {\expandonce{\pggf@coltitles}}{
+							\ifnum\xi=\pgfplots@group@current@plot\relax % if title id = current column
+								\ifx\x\empty\else % if title not empty
+									\pggf@coltitle{\x}
+								\fi
+								\ifpggf@facet@wrap\else
+									\ifnum\xi=\pggf@facetcols\relax
+										\breakforeach
+									\fi
+								\fi
+							\fi
+						}
+					\fi
+				\else % plot without facets
+					\pggf@coltitle{\pggf@coltitles}
+				\fi
+			\fi
+		}
+	},
+	@rowtitles/.style = {
+		/pgfplots/extra description/.append code = {
+			\ifx\pggf@rowtitles\empty\else % if rowtitles
+				\ifpggf@facetted % if facet plot
+					\ifnum\pggf@facetcols=\pgfplots@group@current@column\relax % if last column
+						\foreach \x [count = \xi, expand list] in {\expandonce{\pggf@rowtitles}}{
+							\ifnum\xi=\pgfplots@group@current@row\relax % if title id = current row
+								\ifx\x\empty\else % if title not empty
+									\pggf@rowtitle{\x}
+								\fi
+								\ifnum\xi=\pggf@facetrows\relax
+									\breakforeach
+								\fi
+							\fi
+						}
+					\fi
+				\else % plot without facets
+					\pggf@rowtitle{\pggf@rowtitles}
+				\fi
+			\fi
+		}
+	},
+	col title macro/.code = {\let\pggf@coltitletypeset=#1},
+	row title macro/.code = {\let\pggf@rowtitletypeset=#1},
+	title macro/.style = {col title macro = #1, row title macro = #1},
+	col title is csname/.code = {\def\pggf@coltitletypeset##1{\csname ##1\endcsname}},
+	row title is csname/.code = {\def\pggf@rowtitletypeset##1{\csname ##1\endcsname}},
+	title is csname/.style = {col title is csname, row title is csname}
+}
+
+\newcommand{\pggf@coltitle}[1]{
+	\node[
+		/pggf/every col title,
+		node font = \pggf@coltitlefont,
+		font/.expand once = {\tikz@textfont\pggf@coltitleheightrule}
+	] at (0.5, 1) {\pggf@coltitletypeset{#1}};
+ % test if the title is too wide or too high
+	\ifpggf@detectoverfull
+		\pgfpointdiff{\pgfpointanchor{col title}{south west}}{\pgfpointanchor{col title}{north east}}
+		\pgfmathsetlength{\pggf@tmplen}{\pgf@x - \pgflinewidth - \pggf@scalewidth * \pggf@plotwidth}
+		\ifdim0.0001pt<\pggf@tmplen\relax
+			\pggf@warning{Overfull \string\hbox\space (\the\pggf@tmplen\space too wide) in pggfplot col title "#1"}
+		\fi
+		\pggf@coltitlefont\pgfmathsetlength{\pggf@tmplen}{\pgf@y - \pgflinewidth - (\pggf@coltitlelines - .15) * \baselineskip - 2 * \pgfkeysvalueof{/pgf/inner ysep}}
+		\ifdim0.0001pt<\pggf@tmplen\relax
+			\pggf@warning{Overfull \string\vbox\space (\the\pggf@tmplen\space too high) in pggfplot col title "#1". Increase `col title lines`}
+		\fi
+	\fi
+}
+
+\newcommand{\pggf@rowtitle}[1]{
+	\node[
+		/pggf/every row title,
+		node font/.expand once =  \pggf@rowtitlefont,
+		font/.expand once = {\tikz@textfont\pggf@rowtitleheightrule}
+	] at (1, 0.5) {\pggf@rowtitletypeset{#1}};
+ % test if the title is too wide or too high
+	\ifpggf@detectoverfull
+		\pgfpointdiff{\pgfpointanchor{row title}{south east}}{\pgfpointanchor{row title}{north west}}
+		\pgfmathsetlength{\pggf@tmplen}{\pgf@y - \pgflinewidth - \pggf@scaleheight * \pggf@plotheight}
+		\ifdim0.0001pt<\pggf@tmplen\relax
+			\pggf@warning{Overfull \string\hbox\space (\the\pggf@tmplen\space too wide) in pggfplot row title "#1"}
+		\fi
+		\pggf@rowtitlefont\pgfmathsetlength{\pggf@tmplen}{\pgf@x - \pgflinewidth - (\pggf@rowtitlelines - .15) * \baselineskip - 2 * \pgfkeysvalueof{/pgf/inner ysep}}
+		\ifdim0.0001pt<\pggf@tmplen\relax
+			\pggf@warning{Overfull \string\vbox\space (\the\pggf@tmplen\space too high) in pggfplot row title "#1". Increase `row title lines`}
+		\fi
+	\fi
+}
+
+
+%%% configure ticks and ticklabels in facetted plots
+\newcommand{\pggf@tickconfig}{
+	\ifpggf@facetted%
+		% determine relative facet position (0 = middle row, 1 = top row, 2 = bottom row, 3 = top + bottom row)
+		\pggf@tmpct=0\relax
+		\ifnum1=\pgfplots@group@current@row\relax% first row
+			\advance\pggf@tmpct by1\relax
+		\fi%
+		\ifpggf@facet@wrap%
+			\ifnum\pgfplots@group@current@plot>\numexpr\pggf@wrap@facets-\pggf@facetcols\relax% facets without a facet below
+				\advance\pggf@tmpct by2\relax
+			\fi%
+		\else%
+			\ifnum\pggf@facetrows=\pgfplots@group@current@row\relax% last row
+				\advance\pggf@tmpct by2\relax					
+			\fi%
+		\fi%
+		% store x tick label position in `\ifpggf@tmpif`: true = upper, false = lower
+		\if u\pgfplots@xticklabel@pos\relax% upper
+			\pggf@tmpiftrue%
+		\else%
+			\if l\pgfplots@xticklabel@pos\relax% lower
+				\pggf@tmpiffalse%
+			\else% default (`tick pos` decides)
+				\ifnum3=\pgfplots@xtickposnum\relax% upper
+					\pggf@tmpiftrue%
+					\def\pgfplots@xticklabel@pos{u}%
+				\else%
+					\pggf@tmpiffalse%
+					\def\pgfplots@xticklabel@pos{l}%
+				\fi%
+			\fi%
+		\fi%
+		% configure xlabels and x tick labels
+		\pgfkeysalso{pggf inner x labels/.style = {}}
+		\ifpggf@innerxlabels\else% no inner xlabels
+			\pgfkeysalso{pggf inner x labels/.append style = {xlabel = {}}}
+		\fi%
+		\ifpggf@innerxticklabs\else% no inner x tick labels
+			\pgfkeysalso{pggf inner x labels/.append style = {xticklabels = {}}}
+		\fi%
+		\ifnum2=\pgfplots@xaxislinesnum\relax\else% keep tick labels on zero line axis; potentially suppress others
+			\ifcase\pggf@tmpct% middle row --> suppress
+				\pgfkeysalso{pggf inner x labels}%
+			\or% top row --> suppress if lower
+				\ifpggf@tmpif\else%
+					\pgfkeysalso{pggf inner x labels}%
+				\fi%
+			\or% bottom row --> suppress if upper
+				\ifpggf@tmpif%
+					\pgfkeysalso{pggf inner x labels}%
+				\fi%
+			\or% top + bottom row --> keep
+			\fi%
+		\fi%
+		% configure x ticks
+		\ifpggf@innerxticks\else% no inner x ticks
+			\ifcase\pggf@tmpct% middle row
+				\ifnum2=\pgfplots@xtickposnum\relax\else% keep ticks on zero line axis; suppress others
+					\pgfkeysalso{xmajorticks = false, xminorticks = false}%
+				\fi
+			\or% top row
+				\ifcase\pgfplots@xtickposnum\relax% both --> upper
+					\def\pgfplots@xtickposnum{3}%
+				\or% lower --> suppress
+					\pgfkeysalso{xmajorticks = false, xminorticks = false}%
+				\or% zero line --> keep
+				\or% upper --> keep
+				\else% suppress
+					\pgfkeysalso{xmajorticks = false, xminorticks = false}%
+				\fi%
+			\or% bottom row
+				\ifcase\pgfplots@xtickposnum\relax% both --> lower
+					\def\pgfplots@xtickposnum{1}%
+				\or% lower --> keep
+				\or% zero line --> keep
+				\or% upper --> suppress
+					\pgfkeysalso{xmajorticks = false, xminorticks = false}%
+				\fi%
+			\or% top + bottom row --> keep
+			\fi%
+		\fi%
+		% determine yticklabel position
+		\if u\pgfplots@yticklabel@pos\relax%
+			\pggf@tmpiftrue%
+		\else%
+			\if l\pgfplots@yticklabel@pos\relax%
+				\pggf@tmpiffalse%
+			\else%
+				\ifnum2<\pgfplots@ytickposnum\relax%
+					\pggf@tmpiftrue%
+				\else%
+					\pggf@tmpiffalse%
+				\fi%
+			\fi%
+		\fi%
+		% determine relative facet position (0 = middle column, 1 = top column, 2 = bottom column, 3 = top + bottom column)
+		\pggf@tmpct=0\relax
+		\ifnum1=\pgfplots@group@current@column\relax% first column
+			\advance\pggf@tmpct by1\relax
+		\fi%
+		\ifnum\pggf@facetcols=\pgfplots@group@current@column\relax% last column
+			\advance\pggf@tmpct by2\relax					
+		\else%
+			\ifpggf@facet@wrap%
+				\ifnum\pgfplots@group@current@plot=\pggf@wrap@facets\relax% last wrap facet
+					\advance\pggf@tmpct by2\relax
+				\fi%
+			\fi
+		\fi%
+		% store y tick label position in `\ifpggf@tmpif`: true = upper, false = lower
+		\if u\pgfplots@yticklabel@pos\relax% upper
+			\pggf@tmpiftrue%
+		\else%
+			\if l\pgfplots@yticklabel@pos\relax% lower
+				\pggf@tmpiffalse%
+			\else% default (`tick pos` decides)
+				\ifnum3=\pgfplots@ytickposnum\relax% upper
+					\pggf@tmpiftrue%
+					\def\pgfplots@yticklabel@pos{u}%
+				\else%
+					\pggf@tmpiffalse%
+					\def\pgfplots@yticklabel@pos{l}%
+				\fi%
+			\fi%
+		\fi%
+		% configure ylabels and y tick labels
+		\pgfkeysalso{pggf inner y labels/.style = {}}
+		\ifpggf@innerylabels\else% no inner ylabels
+			\pgfkeysalso{pggf inner y labels/.append style = {ylabel = {}}}
+		\fi%
+		\ifpggf@inneryticklabs\else% no inner y tick labels
+			\pgfkeysalso{pggf inner y labels/.append style = {yticklabels = {}}}
+		\fi%
+		\ifnum2=\pgfplots@yaxislinesnum\relax\else% keep tick labels on zero line axis; potentially suppress others
+			\ifcase\pggf@tmpct% middle column --> suppress
+				\pgfkeysalso{pggf inner y labels}%
+			\or% left column --> suppress if upper
+				\ifpggf@tmpif%
+					\pgfkeysalso{pggf inner y labels}%
+				\fi%
+			\or% right column --> suppress if lower
+				\ifpggf@tmpif\else%
+					\pgfkeysalso{pggf inner y labels}%
+				\fi%
+			\or% left + right column --> keep
+			\fi%
+		\fi%
+		% configure y ticks
+		\ifpggf@inneryticks\else% no inner y ticks
+			\ifcase\pggf@tmpct% middle column
+				\ifnum2=\pgfplots@ytickposnum\relax\else% keep ticks on zero line axis; suppress others
+					\pgfkeysalso{ymajorticks = false, yminorticks = false}%
+				\fi
+			\or% left column
+				\ifcase\pgfplots@ytickposnum\relax% both --> lower
+					\def\pgfplots@ytickposnum{1}%
+				\or% lower --> keep
+				\or% zero line --> keep
+				\or% upper --> suppress
+					\pgfkeysalso{ymajorticks = false, yminorticks = false}%
+				\fi%
+			\or% right column
+				\ifcase\pgfplots@ytickposnum\relax% both --> upper
+					\def\pgfplots@ytickposnum{3}%
+				\or% lower --> suppress
+					\pgfkeysalso{ymajorticks = false, yminorticks = false}%
+				\or% zero line --> keep
+				\or% upper --> keep
+				\else% suppress
+					\pgfkeysalso{ymajorticks = false, yminorticks = false}%
+				\fi%
+			\or% left + right column --> keep
+			\fi%
+		\fi%
+	\fi%
+}
+
+%%% pgfplots styles to set axis limits (and other options) from a file
+\pgfplotsset{
+	axis option from table line/.code n args = {3}{
+		\pgfplotstablegetelem{#3}{#1}\of{#2}%
+		\pgfkeysalso{axis@options/.append style/.expanded = {#1 = {\pgfplotsretval}}}%
+	},
+	axis options from table/.code = {
+		\pgfplotstable@isloadedtable{#1}%
+			{\pgfplotstablecopy{#1}\to\axes@datatable}%
+			{\pgfplotstableread[col sep = tab]{#1}\axes@datatable}%
+		\pgfplotstableforeachcolumn{\axes@datatable}\as{\colname}{%
+			\pgfkeysalso{axis option from table line/.expand once = {\colname}{\axes@datatable}{0}}%
+		}%
+		\pgfkeysalso{axis@options}%
+		% configure ticks and tick labels
+		\pggf@tickconfig%
+	},
+	axis@options/.style = {},
+}
+
+
+%%% option to display the origin as "0" independent of the formatting of the other ticks
+\def\pggf@zerotickformat{}
+
+\pgfplotsset{
+	origin as zero/.is choice,
+	origin as zero/true/.code = {%
+		\def\pggf@zerotickformat{%
+			\pgfmathfloatifapproxequalrel{\tick}{0}{\pgfkeys{/pgf/number format/int trunc}\def\tick{0}}{}%
+		}%
+	},
+	origin as zero/false/.code = {%
+		\def\pggf@zerotickformat{}%
+	},
+	origin as zero/.default = true
+}
+
+\patchcmd{\pgfplots@show@ticklabel@@}{%
+	\node at (\pgfplots@ticklabel@at@x,\pgfplots@ticklabel@at@y) {\csname pgfplots@#1ticklabel\endcsname};%
+}{%
+	\node at (\pgfplots@ticklabel@at@x,\pgfplots@ticklabel@at@y) {\pggf@zerotickformat\csname pgfplots@#1ticklabel\endcsname};%
+}{%
+	% success
+}{%
+	\pggf@warning{The key `origin as zero` is no longer working because the command `\string\pgfplots@show@ticklabel@@` cannot be patched.}%
+}
+
+
+%%% helper for invisible labels
+\def\pggf@mlvphantom{\vphantom{##}\cr}
+\pggf@set{
+	phantom xlabel/.code = {
+		\ifpggf@labeleachxaxis
+			\pgfkeysalso{align = flush center, name = xlabel}
+		\else
+			\pgfkeysalso{node halign header = \pggf@mlvphantom, transparent, name = pxlabel}
+		\fi
+	},
+	phantom ylabel/.code = {
+		\ifpggf@labeleachyaxis
+			\pgfkeysalso{align = flush center, name = ylabel}
+		\else
+			\pgfkeysalso{node halign header = \pggf@mlvphantom, transparent, name = pylabel}
+		\fi
+	}
+}
+
+
+%%% commands for min and max coordinates
+\def\pggfxmin{\pgfkeysvalueof{/pgfplots/xmin}}
+\def\pggfxmax{\pgfkeysvalueof{/pgfplots/xmax}}
+\def\pggfymin{\pgfkeysvalueof{/pgfplots/ymin}}
+\def\pggfymax{\pgfkeysvalueof{/pgfplots/ymax}}
+
+
+%%% set up colormaps
+\def\pggf@make@colormap#1,#2\relax{%
+	\pgfmathparse{#1 < 0 && #2 > 0}%
+	\ifnum1=\pgfmathresult\relax%
+		\pgfplotscreatecolormap{pggf 3 colormap}{color(#1) = (pggf 3 colormap min) color(0) = (pggf 3 colormap mid) color(#2) = (pggf 3 colormap max)}%
+	\else%
+		\pgfplotscreatecolormap{pggf 3 colormap}{color(#1) = (pggf 3 colormap min) color(#2) = (pggf 3 colormap max)}%
+	\fi%
+}
+
+\definecolor{pggf 3 colormap min}{HTML}{4876FF}
+\colorlet{pggf 3 colormap mid}{white}
+\definecolor{pggf 3 colormap max}{HTML}{FF6A6A}
+
+\pgfplotscreatecolormap{pggf 3 colormap}{color(-.5) = (pggf 3 colormap min) color(0) = (pggf 3 colormap mid) color(.5) = (pggf 3 colormap max)}
+
+%%% process dendrogram coordinates
+\def\pggf@dendro@parsecoord{\@ifnextchar l\pggf@dendro@parsecoord@l\pggf@dendro@parsecoord@c}
+\def\pggf@dendro@parsecoord@l#1,#2\relax{%
+	\ifnum0=#2\relax%
+		\path[dendrogram@x, dendrogram@x@connector] (pggf@x#1) -- (dendrogram bottom -| pggf@x#1) coordinate (pggf@#1);%
+	\else%
+		\path[dendrogram@y, dendrogram@y@connector] (pggf@y#1) -- (dendrogram bottom |- pggf@y#1) coordinate (pggf@#1);%
+	\fi%
+	
+}
+\def\pggf@dendro@parsecoord@c#1,#2\relax{}
+
+
+%%% main plot command
+% use: \pggf_<plot type>(<options>)
+% parentheses are required but can be empty
+\def\pggf_#1(#2){
+	\ifcsname pggf@#1\endcsname % test if a command for <plot type> exists
+		\advance\pggf@plotID by1\relax
+		\def\pggf@plottype{#1}
+		\expandafter\edef\csname pggf@data@\the\pggf@plotID\endcsname{\pggf@data}
+		\def\pggf@includeplotfacets{}
+		\def\pggf@skipplotfacets{}
+		% set plot options
+		\pggf@plot@set{\pggf@plottype}{\the\pggf@plotID}{\pggf@plottype_defaults/.try}
+		\pggf@plot@set{\pggf@plottype}{\the\pggf@plotID}{#2}
+		% split data file (except if <plot type> is 'annotate')
+		\def\pggf@tmp{annotate}
+		\ifx\pggf@plottype\pggf@tmp\else
+			\directlua{pggf_data_\pggf@plottype_\the\pggf@plotID = pggfplot.splitTable('\csname pggf@data@\the\pggf@plotID\endcsname_\pggf@plottype.tsv')}
+			% if <plot type> is 'violin', also split the corresponding boxplot file
+			\def\pggf@tmp{violin}
+			\ifx\pggf@plottype\pggf@tmp
+				\directlua{pggf_data_boxplot_\the\pggf@plotID = pggfplot.splitTable('\csname pggf@data@\the\pggf@plotID\endcsname_boxplot.tsv')}
+			\fi
+		\fi
+		% skip plots
+		\if\relax\pggf@skipplotfacets\relax\else
+			\expandafter\pgfplotsinvokeforeach\expandafter{\pggf@skipplotfacets}{
+				\pgfplotsset{
+					facet ##1/.append style/.expanded = {
+						execute at begin axis/.prefix = {
+							\noexpand\pggf@skip@plot{\the\pggf@plotID}
+						}
+					}
+				}
+			}
+		\fi
+		% add plot command
+		\if\relax\pggf@includeplotfacets\relax
+			\pgfplotsset{
+				every facet/.append style/.expanded  = {
+					execute at begin axis/.append = {
+						\noexpand\csname pggf@\pggf@plottype\endcsname{\the\pggf@plotID}
+					}
+				}
+			}
+		\else
+			\expandafter\pgfplotsinvokeforeach\expandafter{\pggf@includeplotfacets}{
+				\pgfplotsset{
+					facet ##1/.append style/.expanded = {
+						execute at begin axis/.append = {
+							\noexpand\csname pggf@\pggf@plottype\endcsname{\the\pggf@plotID}
+						}
+					}
+				}
+			}
+		\fi
+	\else % error if <plot type> is unknown
+		\PackageError{pggfplot}{Unknown plot type: \string\pggf_#1}{}
+	\fi
+}
+
+% helper to skip plots
+\newcommand{\pggf@skip@plot}[1]{
+	\expandafter\def\csname pggf@skip@plot@#1\endcsname{#1}
+}
+
+
+%%% plot types
+%% scatter plot (\pggf_scatter())
+\newcommand{\pggf@scatter}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('scatter_#1', \the\pgfplots@group@current@plot, 'pggf@table@scatter')}
+			% plot (if data present)
+			\ifpggf@noplotdata\else
+				\addplot[
+					only marks,
+					mark = solido,
+					pggfplotcolor,
+					table/x = x,
+					table/y = y,
+					pggf@scatter@#1,
+				] table {\pggf@table@scatter};
+			\fi
+		\fi
+	\endgroup
+}
+
+%% horizontal lines (\pggf_hline())
+\newcommand{\pggf@hline}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.simpleLines('#1', \the\pgfplots@group@current@plot, 'hline')
+			}
+		\fi
+	\endgroup
+}
+
+%% vertical lines (\pggf_vline())
+\newcommand{\pggf@vline}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.simpleLines('#1', \the\pgfplots@group@current@plot, 'vline')
+			}
+		\fi
+	\endgroup
+}
+
+%% sloped lines (\pggf_abline())
+\newcommand{\pggf@abline}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.simpleLines('#1', \the\pgfplots@group@current@plot, 'abline')
+			}
+		\fi
+	\endgroup
+}
+
+%% linear regression lines (\pggf_trendline())
+\newcommand{\pggf@trendline}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.simpleLines('#1', \the\pgfplots@group@current@plot, 'trendline')
+			}
+		\fi
+	\endgroup
+}
+
+%% box plot (\pggf_boxplot())
+\newcommand{\pggf@boxplot}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.boxPlot('#1', \the\pgfplots@group@current@plot, 'boxplot')
+			}
+		\fi
+	\endgroup
+}
+
+%% violin plot (\pggf_violin())
+\newcommand{\pggf@violin}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.boxPlot('#1', \the\pgfplots@group@current@plot, 'violin')
+			}
+		\fi
+	\endgroup
+}
+\pgfqkeys{/pggf/plot}{
+	violin_defaults/.style = {
+		box width = 0.15,
+		boxplot options = {
+			boxplot/whisker extend = 0,
+			fill = white
+		}
+	}
+}
+
+%% significance brackets (\pggf_signif())
+\newcommand{\pggf@signif}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.signifBracket('#1', \the\pgfplots@group@current@plot)
+			}
+		\fi
+	\endgroup
+}
+\pgfqkeys{/pggf/plot}{
+	signif_defaults/.style = {
+		level distance = \baselineskip,
+		/pgf/number format/std = -3,
+		/pgf/number format/zerofill,
+		/pgf/number format/precision = 4,
+		/pgf/number format/sci precision = 1
+	}
+}
+
+%% quiver plot (\pggf_quiver())
+\newcommand{\pggf@quiver}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('quiver_#1', \the\pgfplots@group@current@plot, 'pggf@table@quiver')}
+			% plot (if data present)
+			\ifpggf@noplotdata\else
+				\addplot[
+					pggfplotcolor,
+					table/x = x,
+					table/y = y,
+					quiver = {u = \thisrow{u}, v = \thisrow{v}},
+					quiver arrow,
+					x filter/.expression = {(\thisrow{u} == 0 && \thisrow{v} == 0) ? NaN : x},
+					pggf@quiver@#1,
+				] table {\pggf@table@quiver};
+			\fi
+		\fi
+	\endgroup
+}
+
+%% hexbin plot (\pggf_hexbin())
+\newcommand{\pggf@hexbin}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('hexbin_#1', \the\pgfplots@group@current@plot, 'pggf@table@hexbin')}
+			% plot (if data present)
+			\ifpggf@noplotdata\else
+				\addplot[
+					scatter,
+					scatter/use mapped color = {fill = mapped color},
+					scatter src = explicit,
+					only marks,
+					mark = hexagon,
+					mark size = (\pgfkeysvalueof{/pgfplots/width}) / (\pggfxmax - \pggfxmin) * \pggf@hexbin@width,
+					@setyscale/.code = {
+						\pgfmathsetmacro{\pggf@hex@yscale}{
+							(\pgfkeysvalueof{/pgfplots/height}) / (\pgfkeysvalueof{/pgfplots/width}) * (\pggfxmax - \pggfxmin) / (\pggfymax - \pggfymin)  * (1 + \pggf@enlarge@x@lower + \pggf@enlarge@x@upper) / (1 + \pggf@enlarge@y@lower + \pggf@enlarge@y@upper) * \pggf@hexbin@shape
+						}
+						\pgfkeysalso{/pgfplots/visualization depends on = \pggf@hex@yscale}
+					},
+					@setyscale,
+					colormap name = \pggf@colormap,
+					table/x = x,
+					table/y = y,
+					table/meta = count,
+					pggf@hexbin@#1,
+				] table {\pggf@table@hexbin};
+			\fi
+		\fi
+	\endgroup
+}
+
+%% bar plot (\pggf_bar())
+\newcommand{\pggf@bar}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.barPlot('#1', \the\pgfplots@group@current@plot)
+			}
+		\fi
+	\endgroup
+}
+
+%% heatmap (\pggf_heatmap())
+\newcommand{\pggf@heatmap}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('heatmap_#1', \the\pgfplots@group@current@plot, 'pggf@table@heatmap')}
+			% plot (if data present)
+			\ifpggf@noplotdata\else
+				\addplot[
+					matrix plot*,
+					/pgfplots/late options = {
+						/pgfplots/axis on top,
+					},
+					mesh/ordering = colwise,
+					point meta = explicit,
+					table/x = x,
+					table/y = y,
+					table/meta = score,
+					colormap name = \pggf@colormap,
+					pggf@heatmap@border/.style = {line width = 0pt},
+					pggf@heatmap@#1,
+					pggf@heatmap@border
+				] table {\pggf@table@heatmap};
+			\fi
+		\fi
+	\endgroup
+}
+
+%% line plot (\pggf_line())
+\newcommand{\pggf@line}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.linePlot('#1', \the\pgfplots@group@current@plot)
+			}
+		\fi
+	\endgroup
+}
+\pgfqkeys{/pggf/plot}{
+	line_defaults/.style = {
+		line join = round
+	}
+}
+
+%% density plot (\pggf_density())
+\newcommand{\pggf@density}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.densityPlot('#1', \the\pgfplots@group@current@plot)
+			}
+		\fi
+	\endgroup
+}
+\pgfqkeys{/pggf/plot}{
+	density_defaults/.style = {
+		area legend
+	}
+}
+
+%% ridgeline plot (\pggf_ridgeline())
+\newcommand{\pggf@ridgeline}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\directlua{
+				pggfplot.ridgelinePlot('#1', \the\pgfplots@group@current@plot)
+			}
+		\fi
+	\endgroup
+}
+\pgfqkeys{/pggf/plot}{
+	ridgeline_defaults/.style = {
+		area legend
+	}
+}
+
+%% logo plot (\pggf_logo())
+\newcommand{\pggf@logo}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('logo_#1', \the\pgfplots@group@current@plot, 'pggf@table@logo')}
+			% plot (if data present)
+			\ifcsname pggf@logo@alphabet@len\endcsname\else
+				\PackageError{pggfplot}{The length of the alphabet must be defined using `/pgfplots/alphabet length = ...` in the corresponding axis for `\string\pggf_logo()`}{}
+			\fi
+			\ifpggf@noplotdata\else
+				\pgfplotsinvokeforeach{1, ..., \pggf@logo@alphabet@len}{%
+					\addplot[
+						scatter,
+						scatter src = explicit symbolic,
+						only marks,
+						mark size = (\pgfkeysvalueof{/pgfplots/width}) / ((\pggfxmax) - (\pggfxmin)) * \pgfkeysvalueof{/pggf/plot/letter width},
+						visualization depends on = \thisrow{y_##1} * (\pgfkeysvalueof{/pgfplots/height}) / ((\pggfymax) - (\pggfymin)) \as \pggf@letterht,
+						stack plots = y,
+						stack negative = separate,
+						scatter/classes = {
+							A={mark=letterA,letterAcol},
+							B={mark=letterB,letterBcol},
+							C={mark=letterC,letterCcol},
+							D={mark=letterD,letterDcol},
+							E={mark=letterE,letterEcol},
+							F={mark=letterF,letterFcol},
+							G={mark=letterG,letterGcol},
+							H={mark=letterH,letterHcol},
+							I={mark=letterI,letterIcol},
+							J={mark=letterJ,letterJcol},
+							K={mark=letterK,letterKcol},
+							L={mark=letterL,letterLcol},
+							M={mark=letterM,letterMcol},
+							N={mark=letterN,letterNcol},
+							O={mark=letterO,letterOcol},
+							P={mark=letterP,letterPcol},
+							Q={mark=letterQ,letterQcol},
+							R={mark=letterR,letterRcol},
+							S={mark=letterS,letterScol},
+							T={mark=letterT,letterTcol},
+							U={mark=letterU,letterUcol},
+							V={mark=letterV,letterVcol},
+							W={mark=letterW,letterWcol},
+							X={mark=letterX,letterXcol},
+							Y={mark=letterY,letterYcol},
+							Z={mark=letterZ,letterZcol},
+							NA={mark = none, transparent}
+						},
+						table/x = x,
+						table/y = y_##1,
+						table/meta = letter_##1,
+						pggf@logo@#1,
+					] table {\pggf@table@logo};
+				}
+			\fi
+		\fi
+	\endgroup
+}
+
+%% statistics (\pggf_stats())
+\newcommand{\pggf@stats}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			% load data
+			\directlua{pggfplot.getTable('stats_#1', \the\pgfplots@group@current@plot, 'pggf@table@stats')}
+			% plot (if data present)
+			\ifpggf@noplotdata\else
+				\addplot[
+					only marks,
+					mark = text,
+					text mark as node = true,
+					pggfplotcolor,
+					align = left,
+					position = north west,
+					text mark = {\pggf@statistics},
+					pggf@stats@#1,
+				] table [x expr = 0.5 * (\pggfxmin + \pggfxmax), y expr = 0.5 * (\pggfymin + \pggfymax)] {\pggf@table@stats};
+			\fi
+		\fi
+	\endgroup
+}
+
+%% annotation, i.e. random drawing or plotting commands (\pggf_annotate())
+\newcommand{\pggf@annotate}[1]{
+	\begingroup
+		\ifcsname pggf@skip@plot@#1\endcsname\else
+			\ifcsname pggf@annotation@#1\endcsname
+				\csname pggf@annotation@#1\endcsname
+			\fi
+		\fi
+	\endgroup
+}
+
+%%% command to define statistics
+% use: \pggfdefinestat[<label text>]{<stat name>}
+% <stat name> must be a column name in the table file
+% any occurrence of `\thisstat` in the <label text> will be replaced with the statistic value
+\newcommand{\pggfdefinestat}[2][\thisstat]{
+	\def\thisstat{\expandonce{\csname stat_#2\endcsname}}
+	\expandafter\def\csname stat_#2\endcsname{\thisrow{#2}}
+	\expandafter\edef\csname pggf@stat@#2\endcsname{#1}
+	\pgfqkeys{/pggf/plot/stats}{
+		#2/.estyle = {
+			/pgfplots/visualization depends on = {\expandonce{\csname stat_#2\endcsname}},
+		},
+	}
+}
+
+\def\pggf@stat@decimals{2}
+
+\pggfdefinestat[{$n = \pgfmathprintnumber[fixed, 1000 sep = {{{{,}}}}]{\thisstat}$}]{n}
+\pggfdefinestat[{$\rho = \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{spearman}
+\pggfdefinestat[{$r = \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{pearson}
+\pggfdefinestat[{$R^2 = \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{rsquare}
+\pggfdefinestat[{slope${}= \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{slope}
+\pggfdefinestat[{intercept${}= \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{intercept}
+\pggfdefinestat[{$R^2 = \pgfmathprintnumber[fixed, fixed zerofill, precision = \noexpand\pggf@stat@decimals]{\thisstat}$}]{goodness of fit}
+
+\def\pggf@statistics{}
+\def\pggf@stat@sep{\\}
+
+
+%%% parse styles for scatter, line, and density plots
+\def\pggf@parse@style#1[#2]{\def\pggf@tmpA{#1}\def\pggf@tmpB{#2}}
+
+\pggf@set{
+	scatter styles/.code = {
+		\def\pggf@scatter@classes{}
+		\pgfplotsinvokeforeach{#1}{
+			\pggf@parse@style##1[##1]
+			\if\relax\pggf@scatter@classes\relax
+				\edef\pggf@scatter@classes{\pggf@tmpA={\pggf@tmpB}}
+				\edef\pggf@scatter@names{\pggf@tmpA}
+			\else
+				\edef\pggf@scatter@classes{\pggf@scatter@classes,\pggf@tmpA={\pggf@tmpB}}
+				\edef\pggf@scatter@names{\pggf@scatter@names,\pggf@tmpA}
+			\fi
+		}
+		\pgfkeysalso{/pgfplots/scatter/classes/.expanded={\pggf@scatter@classes}},
+	},
+	line styles/.code = {
+		\def\pggf@line@classes{}
+		\pgfplotsinvokeforeach{#1}{
+			\pggf@parse@style##1[]
+			\if\relax\pggf@line@names\relax
+				\edef\pggf@line@names{\pggf@tmpA}
+			\else
+				\edef\pggf@line@names{\pggf@line@names,\pggf@tmpA}
+			\fi
+			\if\relax\pggf@tmpB\relax\else
+				\pggf@unfiltered@pgfkeys{/tikz/\pggf@tmpA/.style/.expanded = {\pggf@tmpB}}
+			\fi
+		}
+	},
+	density styles/.code = {
+		\def\pggf@density@classes{}
+		\pgfplotsinvokeforeach{#1}{
+			\pggf@parse@style##1[]
+			\if\relax\pggf@density@names\relax
+				\edef\pggf@density@names{\pggf@tmpA}
+			\else
+				\edef\pggf@density@names{\pggf@density@names,\pggf@tmpA}
+			\fi
+			\if\relax\pggf@tmpB\relax\else
+				\pggf@unfiltered@pgfkeys{/tikz/\pggf@tmpA/.style/.expanded = {\pggf@tmpB}}
+			\fi
+		}
+	},
+}
+
+
+%%% commands to print p values or significance levels
+\def\pggf@signif@levels{0.05,0.01,0.001}
+\def\pggf@signif@ns{ns}
+\def\pggf@signif@star{\textasteriskcentered}
+
+\def\pggf@signif@tolevel#1{%
+	\pggf@signiffalse%
+	\expandafter\pgfplotsinvokeforeach\expandafter{\pggf@signif@levels}{%
+		\pgfmathparse{#1 <= ##1}%
+		\ifnum1=\pgfmathresult\relax%
+			\pggf@signiftrue%
+			\pggf@signif@star%
+		\fi%
+	}%
+	\ifpggf@signif\else%
+		\pggf@signif@ns%
+	\fi%
+}
+
+\def\pggf@print@signif#1{\pggf@signif@tolevel{#1}}
+
+\newrobustcmd{\printsigniflevels}{%
+	\foreach [expand list] \x in {\pggf@signif@levels}{%
+		\pggf@signif@tolevel{\x}, $p$ \textle{} \x; %
+	}%
+	\pggf@signif@ns, not significant%
+}
+
+
+%%% command to define a manual legend entry
+\def\manuallegend#1=#2{
+	\pgfqkeys{/pggf/plot}{
+		annotation = {
+			\addlegendimage{#2}
+			\addlegendentry{#1}
+		}
+	}
+}
+
+
+%%% define pggfplot options and styles
+\pggf@set{
+	plot defaults/.code 2 args = {%
+		\ifcsname pggf@#1\endcsname\else% test if a command for #1 exists or if it is a special case with a #1_default style
+			\in@{,#1,}{,zeroline,label,}%
+			\ifin@\else%
+				\PackageError{pggfplot}{Unknown plot type "#1" in `plot defaults = {#1}{...}`}{}%
+			\fi%
+		\fi%
+		\pggf@unfiltered@pgfkeys{/pggf/plot/#1_defaults/.append style = {#2}}%
+	}
+}
+
+\pgfqkeys{/pggf/plot}{
+	data/.code = {\expandafter\edef\csname pggf@data@\the\pggf@plotID\endcsname{\pggf@datadir#1}},
+	data*/.code = {\expandafter\edef\csname pggf@data@\the\pggf@plotID\endcsname{#1}},
+	x/.style = {table/x = #1},
+	x/.default = x,
+	y/.style = {table/y = #1},
+	y/.default = y,
+	x error/.style = {
+		error bars/x dir = both,
+		error bars/x explicit,
+		table/x error minus = #1,
+		table/x error plus = #1
+	},
+	x error*/.style 2 args = {
+		error bars/x dir = both,
+		error bars/x explicit,
+		table/x error minus = #1,
+		table/x error plus = #2
+	},
+	y error/.style = {
+		error bars/y dir = both,
+		error bars/y explicit,
+		table/y error minus = #1,
+		table/y error plus = #1
+	},
+	y error*/.style 2 args = {
+		error bars/y dir = both,
+		error bars/y explicit,
+		table/y error minus = #1,
+		table/y error plus = #2
+	},
+	error/.code = {\expandafter\def\csname pggf@error@\the\pggf@plotID\endcsname{#1}},
+	error min line style/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@line@error@min@\the\pggf@plotID/.append style = {#1}}},
+	error max line style/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@line@error@max@\the\pggf@plotID/.append style = {#1}}},
+	error line style/.style = {error min line style = {#1}, error max line style = {#1}},
+	error ribbon style/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@line@error@ribbon@\the\pggf@plotID/.append style = {#1}}},
+	error bar style/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/error bars/error bar style = {#1}}},
+	/pgfplots/color/.code = {\colorlet{pggfplotcolor}{#1}\pgfkeysalso{pggfplotcolor}},
+	/pgfplots/color from col name/.code = {\if\relax\pggfcolname\relax\else\colorlet{pggfplotcolor}{\pggfcolname}\fi\pgfkeysalso{pggfplotcolor}},
+	/pgfplots/color from column name/.style = {color from col name},
+	/pgfplots/color from row name/.code = {\if\relax\pggfrowname\relax\else\colorlet{pggfplotcolor}{\pggfrowname}\fi\pgfkeysalso{pggfplotcolor}},
+	/pgfplots/style from col name/.code = {
+		\if\relax#1\relax
+			\pgfkeysalso{\pggfcolname}
+		\else
+			\pgfkeysalso{#1 = \pggfcolname}
+		\fi
+	},
+	/pgfplots/style from column name/.style = {style from col name},
+	/pgfplots/style from row name/.code = {
+		\if\relax#1\relax
+			\pgfkeysalso{\pggfrowname}
+		\else
+			\pgfkeysalso{#1 = \pggfrowname}
+		\fi
+	},
+	/pgfplots/color mix/.code 2 args = {\colorlet{pggfplotcolor}{pggfplotcolor!#1!#2}\pgfkeysalso{pggfplotcolor}},
+	only facets/.store in = \pggf@includeplotfacets,
+	only facet/.store in = \pggf@includeplotfacets,
+	skip facets/.store in = \pggf@skipplotfacets,
+	skip facet/.store in = \pggf@skipplotfacets,
+	/pgfplots/position/.style = {
+		text mark style = {
+			anchor = #1,
+			at = (current axis.#1)
+		}
+	},
+	style from column/.code = {
+		\def\pggf@tmp{scatter}
+		\ifx\pggf@plottype\pggf@tmp
+			\pgfkeysalso{
+				scatter,
+				scatter src=explicit symbolic,
+				table/meta = #1,
+			}
+		\else
+			\expandafter\def\csname pggf@stylecol@\the\pggf@plotID\endcsname{#1}
+		\fi
+	},
+	group column/.code = {\expandafter\def\csname pggf@\pggf@plottype @grouped@\the\pggf@plotID\endcsname{#1}},
+	boxplot style from column/.code = {\expandafter\def\csname pggf@boxstylecol@\the\pggf@plotID\endcsname{#1}},
+	boxplot options/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@boxplot@\the\pggf@plotID/.append style = {#1}}},
+	outlier options/.code = {\pggf@unfiltered@pgfkeys{/pgfplots/pggf@outlier@\the\pggf@plotID/.append style = {#1}}},
+	outlier style from column/.code = {
+		\pggf@unfiltered@pgfkeys{
+			/pgfplots/pggf@outlier@\the\pggf@plotID/.append style = {
+				scatter,
+				scatter src = explicit symbolic,
+				table/meta = {#1},
+				scatter/@pre marker code/.code={\scope[\pgfplotspointmeta]}
+			}
+		}
+	},
+	shade/.is choice,
+	shade/left/.code = {\def\pggf@shade{left}},
+	shade/right/.code = {\def\pggf@shade{right}},
+	shade/false/.code = {\def\pggf@shade{false}},
+	shade color/.store in = \pggf@shade@color,
+	shade percent/.store in = \pggf@shade@percent,
+	shade boxplot/.is choice,
+	shade boxplot/true/.code = {\def\pggf@shade@boxplot{true}},
+	shade boxplot/false/.code = {\def\pggf@shade@boxplot{false}},
+	shade boxplot/.default = true,
+	hide outliers/.is choice,
+	hide outliers/true/.code = {\expandafter\def\csname pggf@hide@outliers@\the\pggf@plotID\endcsname{true}},
+	hide outliers/false/.code = {\expandafter\def\csname pggf@hide@outliers@\the\pggf@plotID\endcsname{false}},
+	hide outliers/.default = true,
+	hide boxplots/.is choice,
+	hide boxplots/true/.code = {\expandafter\def\csname pggf@hide@boxplots@\the\pggf@plotID\endcsname{true}},
+	hide boxplots/false/.code = {\expandafter\def\csname pggf@hide@boxplots@\the\pggf@plotID\endcsname{false}},
+	hide boxplots/.default = true,
+	/tikz/pggf@samplesize/.style = {},
+	sample size/.code = {
+		\def\pggf@tmpA{#1}
+		\def\pggf@tmpB{false}
+		\ifx\pggf@tmpA\pggf@tmpB
+			\pggf@samplesizefalse
+		\else
+			\pggf@samplesizetrue
+			\pggf@unfiltered@pgfkeys{/tikz/pggf@samplesize/.append style = {#1}}
+		\fi
+	},
+	sample size left/.code = {\pggf@unfiltered@pgfkeys{/tikz/pggf@samplesize@left/.append style = {#1}}},
+	sample size right/.code = {\pggf@unfiltered@pgfkeys{/tikz/pggf@samplesize@right/.append style = {#1}}},
+	half violin/.is choice,
+	half violin/true/.code = {\def\pggf@violin@half{true}},
+	half violin/false/.code = {\def\pggf@violin@half{false}},
+	half violin/.default = true,
+	annotation/.code = {
+		\ifcsname pggf@annotation@\the\pggf@plotID\endcsname
+			\expandafter\appto\csname pggf@annotation@\the\pggf@plotID\endcsname{#1}
+		\else
+			\expandafter\def\csname pggf@annotation@\the\pggf@plotID\endcsname{#1}
+		\fi
+	},
+	zeroline/.style = {annotation = {\draw[/pggf/plot/zeroline_defaults/.try, #1] (\pggfxmin, 0) -- (\pggfxmax, 0);}},
+	zeroline*/.style = {annotation = {\draw[/pggf/plot/zeroline_defaults/.try, #1] (0, \pggfymin) -- (0, \pggfymax);}},
+	zero line/.style = {zeroline = {#1}},
+	zero line*/.style = {zeroline = {#1}},
+	diagonal/.style = {
+		annotation = {
+			\draw[thin, #1] let \n1 = {min(\pggfxmin, \pggfymin)}, \n2 = {max(\pggfxmax, \pggfymax)} in (\n1, \n1) -- (\n2, \n2);
+		}
+	},
+	diagonal*/.style = {
+		annotation = {
+			\draw[thin, #1] let \n1 = {min(\pggfxmin, \pggfymin)}, \n2 = {max(\pggfxmax, \pggfymax)} in (\n1, -\n1) -- (\n2, -\n2);
+		}
+	},
+	/pgfplots/stats/.style = {/pggf/plot/stats@/.list = {#1}},
+	/pgfplots/stats/.prefix code = {\def\pggf@statistics{}},
+	stats@/.code = {
+		\if\relax\pggf@statistics\relax
+			\edef\pggf@statistics{\expandonce{\csname pggf@stat@#1\endcsname}}
+		\else
+			\edef\pggf@statistics{\expandonce{\pggf@statistics\pggf@stat@sep\csname pggf@stat@#1\endcsname}}
+		\fi
+		\pgfqkeys{/pggf/plot}{stats/#1}
+	},
+	/pgfplots/stats sep/.store in = \pggf@stat@sep,
+	/pgfplots/stats decimals/.store in = \pggf@stat@decimals,
+	legend/.style = {annotation = {\legend{#1}}},
+	manual legend/.style = {manual@legend/.list = {#1}},
+	manual@legend/.code = {\manuallegend#1},
+	scatter legend/.code = {
+		\if\relax\pggf@scatter@names\relax
+			\PackageError{pggfplot}{Scatter plot styles must be created first with `scatter styles={style name1[style1],style name2, ...}` for `scatter legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@scatter@names} {
+						\addlegendentryexpanded{\pggf@tmp}
+					}
+				}
+			}
+		\fi
+	},
+	scatter legend*/.code = {
+		\if\relax\pggf@scatter@names\relax
+			\PackageError{pggfplot}{Scatter plot styles must be created first with `scatter styles={style name1[style1],style name2, ...}` for `scatter legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@scatter@names} {
+						\addlegendentryexpanded{\expandafter\csname \pggf@tmp\endcsname}
+					}
+				}
+			}
+		\fi
+	},
+	line legend/.code = {
+		\if\relax\pggf@line@names\relax
+			\PackageError{pggfplot}{Line plot styles must be created first with `line styles={style name1[style1],style name2, ...}` for `line legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@line@names} {
+						\addlegendentryexpanded{\pggf@tmp}
+					}
+				}
+			}
+		\fi
+	},
+	line legend*/.code = {
+		\if\relax\pggf@line@names\relax
+			\PackageError{pggfplot}{Line plot styles must be created first with `line styles={style name1[style1],style name2, ...}` for `line legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@line@names} {
+						\addlegendentryexpanded{\expandafter\csname \pggf@tmp\endcsname}
+					}
+				}
+			}
+		\fi
+	},
+	density legend/.code = {
+		\if\relax\pggf@density@names\relax
+			\PackageError{pggfplot}{Density plot styles must be created first with `density styles={style name1[style1],style name2, ...}` for `density legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@density@names} {
+						\addlegendentryexpanded{\pggf@tmp}
+					}
+				}
+			}
+		\fi
+	},
+	density legend*/.code = {
+		\if\relax\pggf@density@names\relax
+			\PackageError{pggfplot}{Density plot styles must be created first with `density styles={style name1[style1],style name2, ...}` for `density legend` to work.}{}
+		\else
+			\pgfkeysalso{
+				annotation = {
+					\foreach \pggf@tmp [expand list] in {\pggf@density@names} {
+						\addlegendentryexpanded{\expandafter\csname \pggf@tmp\endcsname}
+					}
+				}
+			}
+		\fi
+	},
+	only samples/.code = {
+		\expandafter\edef\csname pggf@samples@\the\pggf@plotID\endcsname{}
+		\pgfplotsforeachungrouped \pggf@tmp in {#1} {
+			\expandafter\edef\csname pggf@samples@\the\pggf@plotID\endcsname{%
+				\expandafter\if\expandafter\relax\csname pggf@samples@\the\pggf@plotID\endcsname\relax\else%
+					\csname pggf@samples@\the\pggf@plotID\endcsname,%
+				\fi%
+				\pggf@tmp%
+			}
+		}
+	},
+	only sample/.style = {only samples = #1},
+	label/.style n args = {3}{label@ = {#1}{#2}{#3}}, % use: label = {<style (can be empty)>}{<position>}{<column>}; for numeric labels; the style can use `#1` as a placeholder for the current `sample_id`
+	label*/.style n args = {3}{label@ = {#1}{#2}{*#3}}, % use: label* = {<style (can be empty)>}{<position>}{<column>}; for text labels; the style can use `#1` as a placeholder for the current `sample_id`
+	label@/.code n args = {3}{
+		\if\relax#2\relax
+			\PackageError{pggfplot}{Invalid usage of `label`. Use as `label = {<style (can be empty)>}{<position (required)>}{<column (required)>}`}{}
+		\fi
+		\if\relax#3\relax
+			\PackageError{pggfplot}{Invalid usage of `label`. Use as `label = {<style (can be empty)>}{<position (required)>}{<column (required)>}`}{}
+		\fi
+		\ifcsname pggf@label@\the\pggf@plotID\endcsname
+			\expandafter\appto\csname pggf@label@\the\pggf@plotID\endcsname{;#2|#3}
+			\advance\pggf@labelID by1\relax
+		\else
+			\expandafter\def\csname pggf@label@\the\pggf@plotID\endcsname{#2|#3}
+			\pggf@labelID=1\relax
+		\fi
+		\pggf@unfiltered@pgfkeys{/pggf/plot/label@\the\pggf@plotID @\the\pggf@labelID/.style = {#1}}
+	},
+	label macro/.code = {\def\pggf@label@macro{#1}},
+	label is csname/.style = {label macro = {\@nameuse}},
+	bar width/.store in = \pggf@barwidth,
+	box width/.store in = \pggf@boxwidth,
+	violin width/.store in = \pggf@violinwidth,
+	half violin sep/.store in = \pggf@violin@half@sep,
+	jitter/.store in = \pggf@jitter,
+	extra mark/.code 2 args = { % use: extra mark = {<style (can be empty)>}{<column>}
+		\if\relax#2\relax
+			\PackageError{pggfplot}{Invalid usage of `extra mark`. Use as `extra mark = {<style (can be empty)>}{<column (required)>}`}{}
+		\fi
+		\ifcsname pggf@extramark@\the\pggf@plotID\endcsname
+			\expandafter\appto\csname pggf@extramark@\the\pggf@plotID\endcsname{;#2}
+			\advance\pggf@markID by1\relax
+		\else
+			\expandafter\def\csname pggf@extramark@\the\pggf@plotID\endcsname{#2}
+			\pggf@markID=1\relax
+		\fi
+		\pggf@unfiltered@pgfkeys{/pggf/plot/extramark@\the\pggf@plotID @\the\pggf@markID/.style = {#1}}
+	},
+	/pgfplots/quiver arrow/.style = {->},
+	bins/.store in = \pggf@hex@bins,
+	ybar/.code = \pggf@unfiltered@pgfkeys{/tikz/ybar, /pgfplots/ybar legend},
+	xbar/.code = \pggf@unfiltered@pgfkeys{/tikz/xbar, /pgfplots/xbar legend},
+	/pgfplots/border/.style = {pggf@heatmap@border/.style = {draw = #1}},
+	/pgfplots/border/.default = black,
+	missing group warning/.is if = pggf@missinggroupwarn,
+	close density/.is if = pggf@close@density,
+	hide bracket/.code 2 args = {
+		\if\relax#1\relax
+			\PackageError{pggfplot}{Invalid usage of `hide bracket`. Use as `hide bracket = {<first sample ID>}{<second sample ID>}`}{Sample IDs cannot be empty}
+		\fi
+		\if\relax#2\relax
+			\PackageError{pggfplot}{Invalid usage of `hide bracket`. Use as `hide bracket = {<first sample ID>}{<second sample ID>}`}{Sample IDs cannot be empty}
+		\fi
+		\ifcsname pggf@hide@brackets@\the\pggf@plotID\endcsname
+			\expandafter\edef\csname pggf@hide@brackets@\the\pggf@plotID\endcsname{\csname pggf@hide@brackets@\the\pggf@plotID\endcsname,#1-#2}
+		\else
+			\expandafter\edef\csname pggf@hide@brackets@\the\pggf@plotID\endcsname{#1-#2}
+		\fi
+	},
+	bracket style/.code n args = {3}{\pggf@unfiltered@pgfkeys{/pgfplots/pggf@signif@\the\pggf@plotID @#1-#2/.append style = {#3}}},
+	bracket raise/.is choice,
+	bracket raise/.value required,
+	bracket raise/.store in = \pggf@signif@raise,
+	bracket extend/.is choice,
+	bracket extend/.value required,
+	bracket extend/.store in = \pggf@signif@extend,
+	bar only/.style = {bracket extend = {abs = 0}},
+	level distance/.code = {\pgfmathsetlength{\pggf@signif@leveldist}{#1}},
+	shift same sample/.is choice,
+	shift same sample/true/.code = {\def\pggf@signif@shiftsame{true}},
+	shift same sample/false/.code = {\def\pggf@signif@shiftsame{false}},
+	shift same sample/.default = true,
+	ignore hidden brackets/.is choice,
+	ignore hidden brackets/true/.code = {\def\pggf@signif@ignorehidden{true}},
+	ignore hidden brackets/false/.code = {\def\pggf@signif@ignorehidden{false}},
+	ignore hidden brackets/.default = true,
+	manual bracket level/.code n args = {3}{
+		\if\relax#1\relax
+			\PackageError{pggfplot}{Invalid usage of `manual bracket level`. Use as `manual bracket level = {<first sample ID>}{<second sample ID>}{<level>}`}{Sample IDs cannot be empty}
+		\fi
+		\if\relax#2\relax
+			\PackageError{pggfplot}{Invalid usage of `manual bracket level`. Use as `manual bracket level = {<first sample ID>}{<second sample ID>}{<level>}`}{Sample IDs cannot be empty}
+		\fi
+		\if\relax#3\relax
+			\PackageError{pggfplot}{Invalid usage of `manual bracket level`. Use as `manual bracket level = {<first sample ID>}{<second sample ID>}{<level>}`}{The level cannot be empty}
+		\fi
+		\ifcsname pggf@signif@levels@\the\pggf@plotID\endcsname
+			\expandafter\edef\csname pggf@signif@levels@\the\pggf@plotID\endcsname{\csname pggf@signif@levels@\the\pggf@plotID\endcsname,#1-#2=#3}
+		\else
+			\expandafter\edef\csname pggf@signif@levels@\the\pggf@plotID\endcsname{#1-#2=#3}
+		\fi
+	},
+	not signif/.store in = \pggf@signif@ns,
+	signif/.store in = \pggf@signif@star,
+	signif levels/.store in = \pggf@signif@levels,
+	signif label/.is choice,
+	signif label/p value/.code = {\def\pggf@print@signif{\pgfmathprintnumber[precision = 4, sci precision = 1, std = -3]}},
+	signif label/level/.code = {\def\pggf@print@signif{\pggf@signif@tolevel}},
+	signif label/macro/.code = {\def\pggf@print@signif{#1}},
+	signif label/macro/.value required,
+	signif label style/.code = {\pggf@unfiltered@pgfkeys{/tikz/pggf@signif@label@\the\pggf@plotID/.append style = {#1}}},
+	cld/.style 2 args = {label* = {#1}{#2}{cld}},
+	p value/.style 2 args = {label* = {#1}{#2}{p_value}, label macro = {\pggf@print@signif}},
+	letter width/.initial = 1,
+}
+
+
+\pggf@set{
+	sample size/.style = {/pggf/plot/sample size = {#1}}
+}
+
+
+%%% main command to create a pggfplot
+% use: \begin{pggfplot}[<plot options>]{<data base name>} <plot commands> \end{pggfplot}
+\newenvironment{pggfplot}[2][]{
+	\begingroup
+		\def\pggf@data{\pggf@datadir#2}
+		
+		\IfFileExists{\pggf@data_facets.tsv}{\pggf@facettedtrue}{\pggf@facettedfalse}
+		
+		\pggfset{#1}
+		
+		\ifpggf@facetted
+			\directlua{pggfplot.getFacets('\pggf@data_facets.tsv')}
+		\fi
+}{
+		\ifpggf@facet@wrap % adjust horizontal facet sep for facet wrap plots
+			\ifx\pggf@coltitles\empty\else % if title present
+				{\pggf@coltitlefont\pgfmathparse{\pggf@groupplotvsep + ((\pggf@coltitlelines - .15) * \baselineskip + 2 * \pgfkeysvalueof{/pgf/inner xsep})}\expandafter}\expandafter\setlength\expandafter{\expandafter\pggf@groupplotvsep\expandafter}\expandafter{\pgfmathresult pt}
+			\fi
+		\fi
+		
+		\pggf@calculatewidth
+		\pggf@calculateheight
+	
+		\ifpggf@facetted % plot with facets
+			
+			\directlua{pggf_data_axes = pggfplot.splitTable('\pggf@data_axes.tsv')}
+			\pgfplotsset{
+				every facet/.append code = {
+					\directlua{pggfplot.getTable('axes', ##1, 'pggf@table@axes')}
+				}
+			}
+			
+			\begin{groupplot}[
+				pggfplot,
+				facet 1/.append style = {pggfplot position},
+				group style = {
+					horizontal sep = {\pggf@groupplothsep},
+					vertical sep = {\pggf@groupplotvsep},
+					columns = {\pggf@facetcols},
+					rows = {\pggf@facetrows},
+					group name = pggfplot
+				},
+				xlabel = {\pggf@xlabel\\[-\baselineskip]},
+				xlabel style = {/pggf/every xlabel, /pggf/phantom xlabel},
+				ylabel = {\pggf@ylabel\\[-\baselineskip]},
+				ylabel style = {/pggf/every ylabel, /pggf/phantom ylabel}
+			]
+			
+				\pgfmathint{\pggf@facetcols * \pggf@facetrows}
+				\pgfplotsforeachungrouped \pggf@facetID in {1, ..., \pgfmathresult}{
+					\edef\pggf@thisfacet{
+						\noexpand\nextgroupplot[%
+							every facet = \pggf@facetID,
+							axis options from table = {\noexpand\pggf@table@axes},
+							axis override/.try,
+							scale axes,
+							scale only axis,
+							width = {\noexpand\pggf@scalewidth * \pggf@plotwidth},
+							height = {\noexpand\pggf@scaleheight * \pggf@plotheight},
+							column \the\pgfplots@group@current@column/.try,
+							row \the\pgfplots@group@current@row/.try,
+							facet \pggf@facetID/.try
+						]
+					}
+					\ifpggf@facet@wrap
+						\ifnum\pgfplots@group@current@plot<\pggf@wrap@facets\relax\else
+							\edef\pggf@thisfacet{
+								\noexpand\nextgroupplot[%
+									scale only axis,
+									width = {\noexpand\pggf@scalewidth * \pggf@plotwidth},
+									height = {\noexpand\pggf@scaleheight * \pggf@plotheight},
+									group/empty plot,
+									axis background/.style = {fill = none},
+								]
+							}
+						\fi	
+					\fi
+					\pggf@thisfacet
+				}
+			
+			\end{groupplot}
+			
+			\ifpggf@labeleachxaxis\else
+				\ifx\pggf@xlabel\empty\else
+					\path let \p1 = (pggfplot c1r1.west), \p2 = (pggfplot c\pggf@facetcols r1.east), \p3 = (pxlabel.north) in node[anchor = north, align = flush center, /pggf/every xlabel, text depth = 0pt] (xlabel) at ($(\x1, \y3)!.5!(\x2, \y3)$) {\pggf@xlabel};
+				\fi
+			\fi
+			\ifpggf@labeleachyaxis\else
+				\ifx\pggf@ylabel\empty\else
+					\path let \p1 = (pggfplot c1r1.north), \p2 = (pggfplot c1r\pggf@facetrows.south), \p3 = (pylabel.south) in node[anchor = south, rotate = 90, align = flush center, /pggf/every ylabel] (ylabel) at ($(\x3, \y1)!.5!(\x3, \y2)$) {\pggf@ylabel};
+				\fi
+			\fi
+			
+		\else % plots without facets
+		
+			\begin{axis}[
+				name = pggfplot,
+				alias = pggfplot c1r1,
+				axis options from table = {\pggf@data_axes.tsv},
+				axis override/.try,
+				pggfplot,
+				pggfplot position,
+				scale axes,
+				scale only axis,
+				width = {\pggf@scalewidth * \pggf@plotwidth},
+				height = {\pggf@scaleheight * \pggf@plotheight},
+				xlabel = {\pggf@xlabel},
+				xlabel style = {name = xlabel, align = flush center, text depth = 0pt, /pggf/every xlabel},
+				ylabel = {\pggf@ylabel},
+				ylabel style = {name = ylabel, align = flush center, text depth = 0pt, /pggf/every ylabel},
+				every facet = 1,
+				column 1,
+				row 1,
+				facet 1,
+			]
+			
+			\end{axis}
+			
+		\fi
+		
+		\ifpggf@detectoverfull % test if the labels are within the `xlabel height`/`ylabel width` limits
+			\ifpggf@tight@x\else % if `tight x` option not set
+				\path (pggfplot c1r\pggf@facetrows.west) ++(-\pggf@ylabelwidth, 0);
+				\pgfgetlastxy{\xa}{\ya}
+				\pgfpointdiff{\pgfpointanchor{ylabel}{north}}{\pgfpoint{\xa}{\ya}}
+				\ifdim0.0001pt<\pgf@x\relax
+					\pggf@warning{pggfplot exceeds `ylabel width` by \the\pgf@x\space (ylabel = "\expandonce{\pggf@ylabel}")}
+				\fi
+			\fi
+			\ifpggf@tight@y\else % if `tight y` option not set
+				\path (pggfplot c1r\pggf@facetrows.south) ++(0, -\pggf@xlabelheight);
+				\pgfgetlastxy{\xa}{\ya}
+				\pgfpointdiff{\pgfpointanchor{xlabel}{south}}{\pgfpoint{\xa}{\ya}}
+				\ifdim0.0001pt<\pgf@y\relax
+					\pggf@warning{pggfplot exceeds `xlabel height` by \the\pgf@y\space (xlabel = "\expandonce{\pggf@xlabel}")}
+				\fi
+			\fi
+		\fi
+	\endgroup
+}

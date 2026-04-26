@@ -1,0 +1,54 @@
+\begin{tikzpicture}
+
+	%%% enhancer strength of non-ACR controls %%%
+	\coordinate (nonACR controls) at (0, 0);
+	
+	\pgfplotsset{
+		non-ACR/.style = {fill = pgffillcolor!50!black},
+		ACR/.style = {}
+	}
+	
+	\begin{pggfplot}[% 
+		at = (nonACR controls),
+		yshift = -1.5\baselineskip,
+		total width = \textwidth,
+		xlabel = species,
+		ylabel = \enrichment,
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.15},
+		ytick = {-12, -10, ..., 12},
+		xticklabel style = {font = \specieslongfalse},
+		legend style = {anchor = south east, at = {(1, 1)}, yshift = 2\baselineskip},
+		legend columns = 3,
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+	]{tamsACR_non-ACR_ctrls}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{sequence origin:}\hspace*{-\groupplotsep}} = {empty legend},
+				ACR = {half violin left legend = y, fill = gray!25!white},
+				non-ACR = {half violin right legend = y, fill = gray!75!black}
+			},
+			only facet = 5
+		)
+	
+		\pggf_violin(
+			half violin,
+			style from column = {fill = xticklabels, ACR},
+			sample size = {rotate = 90},
+			sample size left = {anchor = south west},
+			sample size right = {anchor = north west},
+			forget plot
+		)
+		
+		\pggf_signif()
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

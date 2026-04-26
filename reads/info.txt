@@ -1,0 +1,1 @@
+Read files are deposited in the NCBI Sequence Read Archive under the BioProject accession: PRJNA1427589 

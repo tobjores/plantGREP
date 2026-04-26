@@ -1,0 +1,59 @@
+%%% general
+\usetikzlibrary{calc, positioning, arrows.meta, arrows, bending, external, backgrounds, topaths, shapes.arrows, shapes.geometric, shapes.symbols, decorations.markings}
+
+\tikzexternalize[prefix = extFigures/, only named = true]
+
+%%% layers
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{semi foreground}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background, main, semi foreground, foreground}
+
+
+%%% colors
+\colorlet{35Spromoter}{DarkSeaGreen3}
+\colorlet{35Senhancer}{DodgerBlue1}
+
+
+%%% save and use jpeg for externalization
+\tikzset{
+	% Defines a custom style which generates BOTH, .pdf and .jpg export
+	% but prefers the .jpg on inclusion.
+	jpeg export/.style = {
+		external/system call/.add = {}{%
+			&& pdftocairo -jpeg -r #1 -singlefile "\image.pdf" "\image" %
+		},
+		/pgf/images/external info,
+		/pgf/images/include external/.code = {%
+			\includegraphics[width=\pgfexternalwidth,height=\pgfexternalheight]{##1.jpg}%
+		},
+	},
+	jpeg export/.default = 300
+}
+
+
+%%% calculate distance between two tikz coordinates
+% use: \distance{<coordinate 1>}{<coordinate 2>}
+\makeatletter
+	\newcommand{\distance}[2]{
+		\path (#1);
+		\pgfgetlastxy{\xa}{\ya} 
+		\path (#2);
+		\pgfgetlastxy{\xb}{\yb}   
+		\pgfpointdiff{\pgfpoint{\xa}{\ya}}{\pgfpoint{\xb}{\yb}}%
+		\setlength{\xdistance}{\pgf@x}
+		\setlength{\ydistance}{\pgf@y}
+	}
+	
+	\def\convertto#1#2{\strip@pt\dimexpr #2*65536/\number\dimexpr 1#1\relax\,#1}
+\makeatother
+
+\newlength{\xdistance}
+\newlength{\ydistance}
+
+
+%%% useful styles
+\tikzset{
+	shorten both/.style = {shorten < = #1, shorten > = #1}
+}
+

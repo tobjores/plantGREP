@@ -1,0 +1,161 @@
+\begin{tikzpicture}
+	
+	%%% prediction accuracy of synthetic enhancer strength with different inputs %%%
+	%% explain input data
+	\coordinate (scheme) at (0, 0);
+	
+	\foreach \x in {1, 2, 3}{
+		\node[anchor = west, node font = \figsmall, yshift = -\x * .75cm] (seq\x) at (scheme) {seq\x};
+	}
+	
+	\distance{seq3.east}{\threecolumnwidth, 0}
+	\pgfmathsetlength{\templength}{(\xdistance - 2\columnsep) / 4}
+	
+	\pgfmathsetseed{928}
+	
+	\colorlet{seq1}{gray!75!white}
+	\colorlet{seq2}{gray}
+	\colorlet{seq3}{gray!75!black}
+	
+	% sequence- and position-specific effect
+	\node[anchor = north west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, shift = {(.5\columnsep, -.5\columnsep)}] (seq+pos) at (scheme -| seq3.east) {seq+pos};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| seq+pos.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+		\foreach \y in {1, 2, 3}{
+			\draw[->] (p\y) +(0, .05) -- ++(0, -.35) node[anchor = north, node font = \figtiny] {%
+				\pgfmathparse{rnd}%
+				\expandafter\xdef\csname tmp\x\y\endcsname{\pgfmathresult}%
+				\pgfmathprintnumber[fixed, zerofill, precision = 1]{\csname tmp\x\y\endcsname}%
+			};
+		}
+	}
+	
+	% sequence-specific effect
+	\node[anchor = base west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, xshift = .5\columnsep] (seq only) at (seq+pos.base east) {seq only};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| seq only.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+		\coordinate[yshift = -.35cm] (e\x) at (p2);
+		\foreach \y in {1, 2, 3}{
+			\draw[->] (p\y) +(0, .05) -- ++(0, -.05) to[out = -90, in = 90] ($(e\x) + (0, .05)$) -- (e\x);
+		}
+		\node[anchor = north, node font = \figtiny] at (e\x) {%
+			\pgfmathparse{(\csname tmp\x1\endcsname + \csname tmp\x2\endcsname + \csname tmp\x3\endcsname) / 3}%
+			\pgfmathprintnumber[fixed, zerofill, precision = 1]{\pgfmathresult}%
+		};
+	}
+	
+	% position-specific effect
+	\node[anchor = base west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, xshift = .5\columnsep] (pos only) at (seq only.base east) {pos only};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| pos only.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+	}
+	\foreach \y in {1, 2, 3}{
+		\draw[->] (seq1 -| p\y) +(0, .05) -- (e3 -| p\y) node[anchor = north, node font = \figtiny] {%
+			\pgfmathparse{(\csname tmp1\y\endcsname + \csname tmp2\y\endcsname + \csname tmp3\y\endcsname) / 3}%
+			\pgfmathprintnumber[fixed, zerofill, precision = 1]{\pgfmathresult}%
+		};
+	}
+	
+	% mean effect
+	\node[anchor = base west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, xshift = .5\columnsep] (mean) at (pos only.base east) {mean};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| mean.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+	}
+	\foreach \y in {1, 2, 3}{
+		\draw[->] (seq1 -| p\y) +(0, .05) -- (seq3 -| p\y) -- ++(0, -.05) to[out = -90, in = 90] ($(p2 |- e3) + (0, .05)$) -- (p2 |- e3);
+	}
+	\node[anchor = north, node font = \figtiny] (effect) at (p2 |- e3) {%
+		\pgfmathparse{%
+			(%
+				\csname tmp11\endcsname + \csname tmp12\endcsname + \csname tmp13\endcsname +%
+				\csname tmp21\endcsname + \csname tmp22\endcsname + \csname tmp23\endcsname +%
+				\csname tmp31\endcsname + \csname tmp32\endcsname + \csname tmp33\endcsname
+			) / 9%
+		}%
+		\pgfmathprintnumber[fixed, zerofill, precision = 1]{\pgfmathresult}%
+	};
+	
+	% ACR lib
+	\node[anchor = north east, node font = \figsmall\bfseries, text width = \templength, align = right, yshift = -\columnsep] (ACR lib) at (seq+pos.east |- effect.south) {ACR lib:};
+	\node[anchor = base west, node font = \figsmall, text width = 3\templength, align = left] at (ACR lib.base east) {transcription factor effects from ACR library};
+	
+	% random
+	\node[anchor = north east, node font = \figsmall\bfseries, text width = \templength, align = right, yshift = -3\columnsep] (random) at (seq+pos.east |- effect.south) {random:};
+	\node[anchor = base west, node font = \figsmall] at (random.base east) {random permutation of \textbf{seq+pos}};
+	
+	
+	%% plot prediction accuracy
+	\coordinate (accuracy) at (scheme -| \textwidth - \twothirdcolumnwidth, 0);
+	
+	\expandafter\def\csname id+pos\endcsname{\vphantom{ly}seq+pos}
+	\expandafter\def\csname no_pos\endcsname{\vphantom{ly}seq only}
+	\expandafter\def\csname no_id\endcsname{\vphantom{ly}pos only}
+	\expandafter\def\csname mean\endcsname{\vphantom{ly}mean}
+	\expandafter\def\csname tamsACR\endcsname{\vphantom{ly}ACR lib}
+	\expandafter\def\csname random\endcsname{\vphantom{ly}random}
+	
+	\begin{pggfplot}[%
+		at = {(accuracy)},
+		total width = \twothirdcolumnwidth,
+		xlabel = method to obtain transcription factor effects,
+		ylabel = prediction accuracy ($R^2$),
+		ymin = 0,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0},
+		title is csname,
+		title color from name,
+		xticklabels are csnames,
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em, text depth = -2pt},
+		tight y
+	]{synEnh_pred_accuracy}
+	
+		\pggf_bar(
+			ybar,
+			color from column name,
+			draw = black
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% predict synthetic enhancer strength %%%
+	\coordinate[yshift = -\columnsep] (correlation) at (scheme |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(correlation)},
+		total width = \textwidth,
+		xlabel = {\textbf{measurement}: \enrichment},
+		ylabel = {\textbf{prediction (seq+pos)}:\\\enrichment},
+		ylabel add to width = 3pt,
+		facet 1/.append style = {
+			pggf colorbar = {%
+				title = count,
+				log2,
+				horizontal,
+				ytick = {0, 2, ..., 15}
+			}
+		},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+	]{synEnh_prediction}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{scheme}
+	\subfiglabel{accuracy}
+	\subfiglabel{correlation}
+
+\end{tikzpicture}

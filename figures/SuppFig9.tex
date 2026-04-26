@@ -1,0 +1,53 @@
+\begin{tikzpicture}
+
+	%%% effect of TFBS shuffling %%%
+	\coordinate (shuffle effect) at (0, 0);
+
+	\tikzset{
+		issignif/.code = {
+			\pgfmathparse{#1 <= 0.05}
+			\ifnum1=\pgfmathresult\relax
+				\pgfkeysalso{fill = OkabeIto4}
+			\else
+				\pgfkeysalso{fill = gray}
+			\fi
+		}
+	}
+
+	\begin{pggfplot}[%
+		at = {(shuffle effect)},
+		total width = \textwidth,
+		xlabel = transcription factor family (motif ID),
+		ylabel = {\enrichment[rel. to WT]},
+		xticklabel style = {anchor = east, rotate = 90, inner ysep = 0pt, inner xsep = .3333em},
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1},
+		ytick = {-10, -9, ..., 10},
+		legend style = {anchor = south east, at = {(1, 0)}, yshift = \baselineskip},
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{TFBS_shuffle_effect}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				significant = {boxplot legend = y, fill = OkabeIto4},
+				not significant = {boxplot legend = y, fill = gray}
+			},
+			only facet = 1
+		)
+	
+		\pggf_boxplot(
+			style from column = {issignif = p_value},
+			sample size = {font = \fontsize{4}{5}\selectfont},
+			forget plot
+		)
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

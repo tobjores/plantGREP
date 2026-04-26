@@ -1,0 +1,24 @@
+module: SequenceModule
+model:
+  arch_name: BiDen
+  arch:
+    input_len: 170
+    output_dim: 8
+    conv_kwargs:
+      ss_kernels: 32
+      ds_kernels: 256
+      kernel_size: 9
+    dn_kwargs:
+      blocks: 6
+      layers: 10
+      R: 2
+      growth_rate: 24
+      batchnorm: both
+task: regression
+loss_fxn: mse
+optimizer: adam
+optimizer_lr: 0.001
+scheduler: reduce_lr_on_plateau
+scheduler_kwargs:
+  patience: 2
+  factor: 0.5

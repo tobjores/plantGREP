@@ -1,0 +1,75 @@
+\begin{tikzpicture}
+
+	%%% in silico evolution with multiple mutations per round %%%
+	\coordinate (muts per round) at (0, 0);
+	
+	% group styles
+	\pgfplotsset{
+		mpr1/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfcolname\relax
+				\pgfkeysalso{fill = \pggfcolname!33!white}
+			\else
+				\pgfkeysalso{fill = \pggfcolname!50!white}
+			\fi
+		},
+		mpr2/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfcolname\relax
+				\pgfkeysalso{fill = \pggfcolname!67!white}
+			\else
+				\pgfkeysalso{fill = \pggfcolname}
+			\fi
+		},
+		mpr3/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfcolname\relax
+				\pgfkeysalso{fill = \pggfcolname}
+			\else
+				\pgfkeysalso{fill = \pggfcolname!50!black}
+			\fi
+		}
+	}
+	
+	\begin{pggfplot}[%
+		at = {(muts per round)},
+		yshift = -\baselineskip,
+		total width = \textwidth,
+		xlabel = total number of mutations introduced during \textit{in silico} evolution,
+		ylabel = \enrichment,
+		xtick = {0, 0.76667, 1.86667},
+		xticklabels = {0, 6, 12},
+		ytick = {-12, -10, ..., 12},
+		enlarge x limits = {0, abs lower = 1/6, abs upper = .5},
+		enlarge y limits = {lower = 0.1, upper = 0.25},
+		title is csname,
+		title color from name,
+		legend style = {anchor = south east, at = {(1, 1)}, yshift = 2\baselineskip},
+		legend columns = 4,
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{evolution_muts_per_round}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{mutations per round:}\hspace*{-\groupplotsep}} = {empty legend},
+				1 = {violin legend = y, fill = gray!25!white},
+				2 = {violin legend = y, fill = gray},
+				3 = {violin legend = y, fill = gray!25!black}
+			},
+			only facet = 5
+		)
+	
+		\pggf_violin(
+			style from column = {muts_per_round},
+			forget plot
+		)
+		
+		\pggf_signif()
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

@@ -1,0 +1,5 @@
+# Ignore everything
+*
+# Don't ignore:
+!.gitignore
+!info.txt

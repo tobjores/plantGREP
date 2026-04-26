@@ -1,0 +1,33 @@
+\begin{tikzpicture}
+
+	%%% Correlation between TF effects and TF model coefficients %%%
+	\coordinate (correlation) at (0, 0);
+	
+	\def\hits{\textbf{model input:} transcription\\factor binding site counts}
+	\def\scores{\textbf{model input:} transcription\\factor motif scores}
+	
+	\begin{pggfplot}[%
+		at = {(correlation)},
+		total width = \textwidth,
+		xlabel = {$\log_2$(effect size)},
+		ylabel = linear model coefficient,
+		title is csname,
+		col title color from name,
+		row title lines = 2,
+		xytick = {-1.2, -.9, ..., 1.2},
+		ylabel add to width = .6\baselineskip,
+	]{lm_TF_cor_effect}
+	
+		\pggf_annotate(diagonal)
+		
+		\pggf_trendline()
+	
+		\pggf_scatter(
+			color from column name
+		)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

@@ -1,0 +1,554 @@
+\begin{tikzpicture}
+	\pgfmathsetseed{928}
+	
+	%%% scheme of the enhancer screen %%%
+	\coordinate (scheme) at (0, 0);
+
+	%% DNA
+	\coordinate (DNA) at ($(scheme) + (.85, -.45)$);
+	
+	\def\scalefactor{0.5}
+
+	\tikzset{
+		nucleosome core/.style = {cylinder, rotate = 150, shape aspect = 1, minimum width = \scalefactor * 1cm, minimum height = \scalefactor * 1cm, cylinder uses custom fill, cylinder end fill = gray!33, cylinder body fill = gray!66},
+		DNA wrap/.style= {very thick, draw, color = black, line cap = round, line width = \scalefactor * \pgflinewidth}
+	}
+	
+	\begin{scope}[scale = \scalefactor]
+
+		\foreach \i [count = \ii, remember = \i as \li] in {0, 1, 2} { 
+			\path node [nucleosome core] (nucleosome\i) at ($(DNA) + (\i, 0)$) {} ;
+			\ifnum\ii>1
+				\begin{pgfonlayer} {background}
+					\draw[DNA wrap] ($(DNA) + (\li, 0)$) to[out = -90, in = 210] (nucleosome\i.65);
+				\end{pgfonlayer}
+			\fi
+			\draw [DNA wrap] (nucleosome\i.65) edge [bend right = 15 / \scalefactor] (nucleosome\i.290);
+			\draw [DNA wrap] (nucleosome\i.90) edge [bend right = 15 / \scalefactor] (nucleosome\i.265);
+		}
+		
+		\draw[DNA wrap] ($(nucleosome0) + (-1, 0)$) coordinate (DNA start) to[out = 0, in = 210] (nucleosome0.65);
+		\draw[DNA wrap, dotted] (DNA start) -- ++(-0.5, 0);
+		
+		\begin{pgfonlayer} {background}
+			\draw[DNA wrap] ($(nucleosome2) + (.25, 0)$) to[out = -90, in = 180] ++(.5, -.5) coordinate (insulator start);
+		\end{pgfonlayer}
+		
+		\foreach \i [count = \ii, remember = \i as \li] in {5, 6} {
+			\path node [nucleosome core] (nucleosome\i) at ($(DNA) + (\i, 0)$) {} ;
+			\ifnum\ii>1
+				\begin{pgfonlayer} {background}
+					\draw[DNA wrap] ($(DNA) + (\li, 0)$) to[out = -90, in = 210] (nucleosome\i.65);
+				\end{pgfonlayer}
+			\fi
+			\draw [DNA wrap] (nucleosome\i.65) edge [bend right = 15 / \scalefactor] (nucleosome\i.290);
+			\draw [DNA wrap] (nucleosome\i.90) edge [bend right = 15 / \scalefactor] (nucleosome\i.265);
+		}
+		
+		\draw[DNA wrap] (insulator start) -- ($(nucleosome5) + (-1, -.5)$) coordinate (insulator end) to[out = 0, in = 200] (nucleosome5.65);
+		\draw[line width = .15cm, DeepSkyBlue2, -Triangle Cap] (insulator start) -- (insulator end) node[pos = .5, anchor = north, align = center] {putative\\enhancer};
+		
+		\draw[fill = DeepSkyBlue3] ($(insulator start)!.25!(insulator end)$) ++(0, .5) circle (.45);
+		\draw[fill = DeepSkyBlue1] ($(insulator start)!.67!(insulator end)$) ++(0, .4) circle (.35);
+		
+		\begin{pgfonlayer} {background}
+			\draw[DNA wrap] ($(nucleosome6) + (.25, 0)$) to[out = -90, in = 180] ++(.5, -.5) coordinate (enhancer start);
+		\end{pgfonlayer}
+		
+		\foreach \i [count = \ii, remember = \i as \li] in {9, 10} {
+			\path node [nucleosome core] (nucleosome\i) at ($(DNA) + (\i, 0)$) {} ;
+			\ifnum\ii>1
+				\begin{pgfonlayer} {background}
+					\draw[DNA wrap] ($(DNA) + (\li, 0)$) to[out = -90, in = 210] (nucleosome\i.65);
+				\end{pgfonlayer}
+			\fi
+			\draw [DNA wrap] (nucleosome\i.65) edge [bend right = 15 / \scalefactor] (nucleosome\i.290);
+			\draw [DNA wrap] (nucleosome\i.90) edge [bend right = 15 / \scalefactor] (nucleosome\i.265);
+		}
+		
+		\draw[DNA wrap] (enhancer start) -- ($(nucleosome9) + (-1, -.5)$) coordinate (enhancer end) to[out = 0, in = 200] (nucleosome9.65);
+		\draw[line width = .15cm, DodgerBlue2, -Triangle Cap] (enhancer start) -- (enhancer end) node[pos = .5, anchor = north, align = center] {putative\\enhancer};
+		
+		\draw[fill = DodgerBlue1] ($(enhancer start)!.7!(enhancer end)$) ++(0, .45) circle (.4);
+		\draw[fill = DodgerBlue3] ($(enhancer start)!.2!(enhancer end)$) ++(0, .4) circle (.35);
+		
+		\begin{pgfonlayer} {background}
+			\draw[DNA wrap] ($(nucleosome10) + (.25, 0)$) to[out = -90, in = 180] ++(.5, -.5) coordinate (promoter start);
+		\end{pgfonlayer}
+		
+		\foreach \i [count = \ii, remember = \i as \li, evaluate = \i as \ni using int(\i)] in {13.5, 15, 16.5, 18, 19} {
+			\path node [nucleosome core] (nucleosome\ni) at ($(DNA) + (\i, 0)$) {} ;
+			\ifnum\ii>1
+				\begin{pgfonlayer} {background}
+					\draw[DNA wrap] ($(DNA) + (\li, 0)$) to[out = -90, in = 210] (nucleosome\ni.65);
+				\end{pgfonlayer}
+			\fi
+			\draw [DNA wrap] (nucleosome\ni.65) edge [bend right = 15 / \scalefactor] (nucleosome\ni.290);
+			\draw [DNA wrap] (nucleosome\ni.90) edge [bend right = 15 / \scalefactor] (nucleosome\ni.265);
+		}	
+		
+		\draw[line width = .15cm, 35Spromoter] (promoter start) -- ++(1.25, 0) node[pos = .5, anchor = north] {core promoter} coordinate (promoter end);
+		\draw[-{Stealth[round]}, thick] (promoter end) ++(.5\pgflinewidth, 0) |- ++(.6,.4);
+		
+		\draw[fill = DarkSeaGreen1] ($(promoter start)!.15!(promoter end)$) ++(0, .3) circle (.25);
+		\draw[fill = DarkSeaGreen2] ($(promoter start)!.6!(promoter end)$) ++(0, .5) circle (.6 and .45);
+		
+		\draw[DNA wrap] (promoter end) -- ($(nucleosome13) + (-1.25, -.5)$) coordinate (gene end) to[out = 0, in = 200] (nucleosome13.65);
+		
+		\begin{pgfonlayer} {background}
+			\draw[DNA wrap] ($(nucleosome19) + (.25, 0)$) to[out = -90, in = 180, out looseness = 3] ++(0.5, 0) coordinate (DNA end);
+			\draw[DNA wrap, dotted] (DNA end) -- ++(0.5, 0);
+		\end{pgfonlayer}
+		
+	\end{scope}
+
+	%% accessibility
+	\coordinate (accessibility) at ($(DNA start) + (0, -1.8)$);
+	
+	\path (accessibility -| nucleosome2) ++(.25, 0) coordinate (a1) (accessibility -| nucleosome5) ++(-.25, 0) coordinate (a2) (accessibility -| nucleosome6) ++(.25, 0) coordinate (a3) (accessibility -| nucleosome9) ++(-.25, 0) coordinate (a4) (accessibility -| nucleosome10) ++(.25, 0) coordinate (a5) (accessibility -| nucleosome13) ++(-.25, 0) coordinate (a6);
+	\draw[fill = gray] (a1) cos ($(a1)!.25!(a2) + (0, .4)$) sin ($(a1)!.5!(a2) + (0, .8)$) cos ($(a1)!.75!(a2) + (0, .4)$) sin (a2) (a3) cos ($(a3)!.25!(a4) + (0, .375)$) sin ($(a3)!.5!(a4) + (0, .75)$) cos ($(a3)!.75!(a4) + (0, .375)$) sin (a4) (a5) cos ($(a5)!.25!(a6) + (0, .5)$) sin ($(a5)!.5!(a6) + (0, 1)$) cos ($(a5)!.75!(a6) + (0, .5)$) sin (a6);
+	
+	\draw (accessibility) -- (DNA end |- accessibility);
+	\node[anchor = south west] at (scheme |- accessibility) {accessibility};
+	
+	%% species
+	\setlength{\templength}{.7cm}
+	
+	\coordinate[shift = {(-4.3\templength, .8cm -.5\templength)}] (species) at (DNA end |- accessibility);
+	
+	\planticon[width = \templength]{arabidopsis} at ($(species) + (.5\templength, 0)$);
+	\planticon[width = \templength]{tomatoFruit} at ($(species) + (1.6\templength, 0)$);
+	\planticon[width = \templength]{maize} at ($(species) + (2.7\templength, 0)$);
+	\planticon[width = \templength]{sorghum} at ($(species) + (3.8\templength, 0)$);
+		
+	%% fragments
+	\coordinate[yshift = -.25cm] (fragments) at (accessibility);
+	
+	\draw[line width = .2cm, -Triangle Cap, DeepSkyBlue2] ($(fragments -| a1)!.5!(fragments -| a2)$) coordinate (frag1) +(-.3, 0) -- +(.3, 0);
+	\draw[line width = .2cm, -Triangle Cap, DodgerBlue2] ($(fragments -| a3)!.5!(fragments -| a4)$) coordinate (frag2) +(-.3, 0) -- +(.3, 0);
+	
+	%% array
+	\coordinate (array) at ($(scheme |- fragments) + (.1, -1.8)$);
+	
+	\draw[thin, fill = gray!50] (array) -- ++(3, 0) coordinate[pos = .5] (array mid) -- ++(0.6, 0.3) coordinate (array right) -- ++(-3, 0) -- cycle;
+	\node[anchor = north, align = center, xshift = .3cm, inner xsep = 0pt] (array text) at (array mid) {array synthesis of \textasciitilde \textbf{175,000}\\accessible chromatin regions};
+	
+	\foreach \i/\col [evaluate = \i as \j using 7 - \i] in {1/DodgerBlue2, 2/DeepSkyBlue2, 3/MediumOrchid2, 4/RoyalBlue2, 5/Chocolate1, 6/Aquamarine2} {
+		\foreach \k in {1, 2, 3, 4} {
+			\draw[\col!50!white, rounded corners = 0.05cm] (array) ++(\i * 0.5 - 0.1 + rand * 0.06, 0.075 + rand * 0.03) -- ++(0, 0.1) -- ++(-0.05, 0.1) -- ++(0.1, 0.2) -- ++(-0.05, 0.1) -- ++(0, 0.1);
+			\draw[\col, rounded corners = 0.05cm] (array) ++(\j * 0.5 + 0.2 + rand * 0.06, 0.225 + rand * 0.03)  -- ++(0, 0.1) -- ++(-0.05, 0.1) -- ++(0.1, 0.2) -- ++(-0.05, 0.1) -- ++(0, 0.1) coordinate (f\i);
+		}
+	}
+	
+	\draw[gray, ->, shorten both = .1cm] (frag1) ++(0, -.075) -- (f2);
+	\draw[gray, ->, shorten both = .1cm] (frag2) ++(0, -.075) -- (f1);
+	
+	%% constructs
+	\draw[very thick, -Latex] (array right) ++(.2, .2) -- ++(.6, 0) coordinate (arrow 1);
+	
+	\coordinate[xshift = .2cm] (constructs) at (arrow 1);
+	
+	\coordinate (construct 1) at ($(constructs) + (.1, .9)$);
+	\coordinate (construct 2) at ($(constructs) + (0, .3)$);
+	\coordinate (construct 3) at ($(constructs) + (-.1, -.3)$);
+	\coordinate (construct 4) at ($(constructs) + (-.2, -.9)$);
+	
+	% construct 1
+	\draw[line width = .2cm, -Triangle Cap, DeepSkyBlue2]  (construct 1) ++(.5, 0) -- ++(.6, 0) coordinate (enh east);
+	\draw[line width = .2cm, 35Spromoter] (enh east) ++(.2, 0) -- ++(.3, 0) coordinate (pro east);
+	\draw[-{Stealth[round]}, semithick] (pro east) ++(.5\pgflinewidth, 0) |- ++(.35, .3);
+	\node[draw = black, thin, anchor = west, minimum width = 1cm, outer xsep = 0pt] (GFP) at ($(pro east) + (.3, 0)$) {GFP};
+	\coordinate[xshift = .5cm] (construct 1 end) at (GFP.east);
+	
+	\begin{pgfonlayer} {background}
+		\fill[Orchid1] (GFP.north west) ++(.15, 0) rectangle ($(GFP.south west) + (.05, 0)$);
+		\draw[thick, dashed] (construct 1) -- ++(.4, 0) coordinate (c1) (construct 1 end) -- ++(-.4, 0) coordinate (c2);
+		\draw[thick] (c1) -- (GFP.west) (GFP.east) -- (c2);
+	\end{pgfonlayer}
+	
+	% construct 2
+	\draw[line width = .2cm, Triangle Cap-, DeepSkyBlue2]  (construct 2) ++(.5, 0) -- ++(.6, 0) coordinate (enh east);
+	\draw[line width = .2cm, 35Spromoter] (enh east) ++(.2, 0) -- ++(.3, 0) coordinate (pro east);
+	\draw[-{Stealth[round]}, semithick] (pro east) ++(.5\pgflinewidth, 0) |- ++(.35, .3);
+	\node[draw = black, thin, anchor = west, minimum width = 1cm, outer xsep = 0pt] (GFP) at ($(pro east) + (.3, 0)$) {GFP};
+	\coordinate[xshift = .5cm] (construct 2 end) at (GFP.east);
+	
+	\begin{pgfonlayer} {background}
+		\fill[MediumPurple2] (GFP.north west) ++(.15, 0) rectangle ($(GFP.south west) + (.05, 0)$);
+		\draw[thick, dashed] (construct 2) -- ++(.4, 0) coordinate (c1) (construct 2 end) -- ++(-.4, 0) coordinate (c2);
+		\draw[thick] (c1) -- (GFP.west) (GFP.east) -- (c2);
+	\end{pgfonlayer}
+
+	% construct 3
+		\draw[line width = .2cm, -Triangle Cap, DodgerBlue2]  (construct 3) ++(.5, 0) -- ++(.6, 0) coordinate (enh east);
+		\draw[line width = .2cm, 35Spromoter] (enh east) ++(.2, 0) -- ++(.3, 0) coordinate (pro east);
+		\draw[-{Stealth[round]}, semithick] (pro east) ++(.5\pgflinewidth, 0) |- ++(.35, .3);
+		\node[draw = black, thin, anchor = west, minimum width = 1cm, outer xsep = 0pt] (GFP) at ($(pro east) + (.3, 0)$) {GFP};
+		\coordinate[xshift = .5cm] (construct 3 end) at (GFP.east);
+		
+		\begin{pgfonlayer} {background}
+			\fill[HotPink1] (GFP.north west) ++(.15, 0) rectangle ($(GFP.south west) + (.05, 0)$);
+			\draw[thick, dashed] (construct 3) -- ++(.4, 0) coordinate (c1) (construct 3 end) -- ++(-.4, 0) coordinate (c2);
+			\draw[thick] (c1) -- (GFP.west) (GFP.east) -- (c2);
+		\end{pgfonlayer}
+	
+	% construct 4
+	\draw[line width = .2cm, Triangle Cap-, DodgerBlue2]  (construct 4) ++(.5, 0) -- ++(.6, 0) coordinate (enh east);
+	\draw[line width = .2cm, 35Spromoter] (enh east) ++(.2, 0) -- ++(.3, 0) coordinate (pro east);
+	\draw[-{Stealth[round]}, semithick] (pro east) ++(.5\pgflinewidth, 0) |- ++(.35, .3);
+	\node[draw = black, thin, anchor = west, minimum width = 1cm, outer xsep = 0pt] (GFP) at ($(pro east) + (.3, 0)$) {GFP};
+	\coordinate[xshift = .5cm] (construct 4 end) at (GFP.east);
+	
+	\begin{pgfonlayer} {background}
+		\fill[SlateBlue3] (GFP.north west) ++(.15, 0) rectangle ($(GFP.south west) + (.05, 0)$);
+		\draw[thick, dashed] (construct 4) -- ++(.4, 0) coordinate (c1) (construct 4 end) -- ++(-.4, 0) coordinate (c2);
+		\draw[thick] (c1) -- (GFP.west) (GFP.east) -- (c2);
+	\end{pgfonlayer}
+	
+	%% infiltration
+	\draw[very thick, -Latex] (arrow 1 -| construct 2 end) ++(.2, 0) -- ++(.6, 0) coordinate (arrow 2);
+	
+	\coordinate[xshift = 1cm] (transformation) at (arrow 2);
+		
+	\coordinate[shift = {(.4, .4)}] (leaf center) at (transformation);
+	
+	\planticon*[scale = .65]{tobaccoLeaf} at (leaf center);
+	
+	\begin{scope}[xscale = -1]
+		\planticon[width = .7cm]{pipe} at ($(transformation |- leaf center) + (.425, .33)$);
+	\end{scope}
+	
+	\coordinate[shift = {(-.5, -.55)}] (protoplasts) at (transformation);
+	
+	\planticon[width = .6cm]{protoplast} at ($(protoplasts) + (90:.3)$);
+	\planticon[width = .6cm]{protoplast} at ($(protoplasts) + (162:.3)$);
+	\planticon[width = .6cm]{protoplast} at ($(protoplasts) + (234:.3)$);
+	\planticon[width = .6cm]{protoplast} at ($(protoplasts) + (306:.3)$);
+	\planticon[width = .6cm]{protoplast} at ($(protoplasts) + (18:.3)$);
+	
+	\planticon[width = .7cm, rotate = 15]{maize} at ($(protoplasts) + (.8, -.2)$);
+	
+	%% conditions
+	\coordinate[xshift = .45cm + \columnsep] (conditions) at (scheme -| DNA end);
+	
+	\setlength{\templength}{.6cm}
+	
+	\node[anchor = north west, font = \figsmall, align = flush left, xshift = \templength] (light) at (conditions) {\textbf{light}\\2 days at 25\,\textdegree C\\16\,h light/8\,h dark};
+	\planticon[height = \templength]{light} at ($(light.west) + (-.5\templength, 0)$);
+	
+	\node[anchor = north west, font = \figsmall, align = flush left, yshift = -.1\templength] (dark) at (light.south west) {\textbf{dark}\\2 days at 25\,\textdegree C\\constant dark};
+	\planticon[height = \templength]{dark} at ($(dark.west) + (-.5\templength, 0)$);
+	
+	\node[anchor = north west, font = \figsmall, align = flush left, yshift = -.1\templength] (warm) at (dark.south west) {\textbf{warm}\\2 days at 25\,\textdegree C\\1 day at 35\,\textdegree C\\16\,h light/8\,h dark};
+	\planticon[height = \templength]{warm} at ($(warm.west) + (-.5\templength, 0)$);
+	
+	\node[anchor = north west, font = \figsmall, align = flush left, yshift = -.1\templength] (cold) at (warm.south west) {\textbf{cold}\\2 days at 25\,\textdegree C\\1 day at 10\,\textdegree C\\16\,h light/8\,h dark};
+	\planticon[height = \templength]{cold} at ($(cold.west) + (-.5\templength, 0)$);
+
+	\node[anchor = north west, font = \figsmall, align = flush left, yshift = -.1\templength] (maize) at (cold.south west) {\textbf{maize}\\16\,h at 25\,\textdegree C\\constant dark};
+	\planticon[height = \templength]{maize} at ($(maize.west) + (-.5\templength, 0)$);
+	
+	\node[anchor = south, rotate = -90] (tobacco) at ($(light.north east)!.5!(cold.south east)$) {\textbf{tobacco}};
+	\begin{pgfonlayer}{background}
+		\foreach \x in {light, dark, warm, cold} {
+			\fill[\x!10] (tobacco.south |- \x.north) -- (\x.north west) to[out = 180, in = 90] ($(\x.west) + (-1.1\templength, 0)$) to[out = -90, in = 180] (\x.south west) -| cycle;
+		}
+		\fill[tobacco!20, draw = black, thin] (light.north -| tobacco.north) rectangle (cold.south -| tobacco.south);
+	\end{pgfonlayer}
+	
+	
+	\node[anchor = base, rotate = -90] at (maize.east -| tobacco.base) {\textbf{maize}};
+	\begin{pgfonlayer}{background}
+		\fill[maize!10] (tobacco.south |- maize.north) -- (maize.north west) to[out = 180, in = 90] ($(maize.west) + (-1.1\templength, 0)$) to[out = -90, in = 180] (maize.south west) -| cycle;
+		\fill[maize!20, draw = black, thin] (maize.north -| tobacco.north) rectangle (maize.south -| tobacco.south);
+	\end{pgfonlayer}
+	
+
+	%%% PCA of Plant STARR-seq experiments %%%
+	\coordinate[xshift = \columnsep] (PCA) at (scheme -| tobacco.north);
+	
+	\distance{PCA}{array text.south -| \textwidth, 0}
+	
+	\tikzset{
+		PC1/.store in = \PCone,
+		PC2/.store in = \PCtwo
+	}
+	
+	\begin{pggfplot}[%
+		at = {(PCA -| \textwidth, 0)},
+		anchor = north east,
+		width = {\xdistance - 1.5\baselineskip},
+		height = {-\ydistance - 1.5\baselineskip},
+		tight,
+		xlabel = {PC2 (\pgfmathprintnumber[precision = 0]{\PCtwo}\%)},
+		ylabel = {PC1 (\pgfmathprintnumber[precision = 0]{\PCone}\%)},
+		scatter styles = {light,dark,warm,cold,maize},
+		ticks = none,
+	]{tamsACR_PCA}
+	
+		\pggf_scatter(
+			mark size = 2.5,
+			opacity = 0.5,
+			style from column = condition
+		)
+	
+		\pggf_annotate(scatter legend*)
+	
+	\end{pggfplot}
+	
+	
+	%%% enhancer strength by species (light only) %%%
+	\coordinate[yshift = -\columnsep] (species) at (scheme |- array text.south);
+	
+	\planticon[height = .5cm]{light} at ($(species) + (.6, -.25)$);
+	
+	\begin{pggfplot}[% 
+		at = (species),
+		total width = \threecolumnwidth - 2.5\baselineskip,
+		xlabel = species,
+		ylabel = \enrichment,
+		xticklabels are csnames,
+		col title = light,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1},
+		ytick = {-12, -10, ..., 12},
+		xticklabel style = {font = \specieslongfalse},
+		only facet = 1,
+	]{tamsACR_species}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\draw[gray, dashed] (\pggfxmin, -2) -- (\pggfxmax, -2) coordinate (repressive) (\pggfxmin, 1) -- (\pggfxmax, 1) coordinate (enhancing);
+			}
+		)
+	
+		\pggf_violin(
+			style from column = {fill = xticklabels}
+		)
+	
+	\end{pggfplot}
+	
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (pggfplot c1r1.north east) -- (enhancing -| pggfplot c1r1.east) node[pos = .5, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {enhancing\\(14\%)};
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (enhancing -| pggfplot c1r1.east) -- (repressive -| pggfplot c1r1.east) node[pos = .4, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {inactive\\(76\%)};
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (repressive -| pggfplot c1r1.east) -- (pggfplot c1r1.south east) node[pos = .55, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {repressive\\(11\%)};
+	
+	
+	%%% correlation of enhancer strength in forward and reverse orientation (light only) %%%
+	\coordinate (ori cor) at (species -| \textwidth - \twothirdcolumnwidth, 0);
+	
+	\planticon[height = .5cm]{light} at ($(ori cor) + (.6, -.25)$);
+	
+	\begin{pggfplot}[%
+		at = {(ori cor)},
+		total width = \threecolumnwidth,
+		xlabel = {\textbf{forward}: \enrichment},
+		ylabel = {\textbf{reverse}: \enrichment},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		col title = orientation (\usename{light}),
+		title color = light,
+		xytick = {-12, -10, ..., 12},
+		only facet = 1,
+		tight y
+	]{tamsACR_cor_orientation}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% orientation-dependence of enhancer strength %%%
+	\coordinate (orientation) at (species -| \textwidth - \threecolumnwidth, 0);
+	
+	\begin{pggfplot}[% 
+		at = (orientation),
+		total width = \threecolumnwidth,
+		xlabel = condition,
+		ylabel = $\log_2$(orientation-dependence),
+		xticklabels are csnames,
+		title = orientation,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1},
+		ytick = {-12, -11, ..., 12},
+		xticklabel style = {font = \vphantom{light}}
+	]{tamsACR_orientation}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {\draw[densely dashed] (\pggfxmin, {log2(1.5)}) -- (\pggfxmax, {log2(1.5)});},
+			annotation = {\draw[densely dotted] (\pggfxmin, 1) -- (\pggfxmax, 1);}
+		)
+	
+		\pggf_violin(
+			style from column = {fill = xticklabels}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% enhancer strength in stable Arabidopsis lines
+	\coordinate[yshift = -\columnsep] (DL strength) at (scheme |- xlabel.south);
+	
+	\planticon[height = .5cm]{light} at ($(DL strength) + (.6, -.25)$);
+	
+	% define enhancers
+	\defname[named]{Zm-23177}{Zm-23177}{PaulTolMuted1}
+	\defname[named]{At-1}{At-1}{PaulTolMuted10}
+	\defname[named]{At-13524}{At-13524}{PaulTolMuted2}
+	\defname[named]{Sl-774}{Sl-774}{PaulTolMuted3}
+	\defname[named]{At-2020}{At-2020}{PaulTolMuted4}
+	\defname[named]{Sb-11289}{Sb-11289}{PaulTolMuted5}
+	\defname[named]{At-11716}{At-11716}{PaulTolMuted6}
+	\defname[named]{At-12871}{At-12871}{PaulTolMuted7}
+	\defname[named]{At-9661}{At-9661}{PaulTolMuted8}
+	\defname[named]{Sl-12881}{Sl-12881}{PaulTolMuted9}
+	
+	\begin{pggfplot}[%
+		at = {(DL strength)},
+		total width = \threecolumnwidth,
+		ylabel = \dlratio,
+		xticklabels are csnames,
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em},
+		col title = stable \textit{Arabidopsis} lines,
+		title color = Arabidopsis,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1},
+		tight y
+	]{DL_strength}
+		
+		\pggf_annotate(zeroline)
+	
+		\pggf_boxplot(
+			style from column = {fill* = xticklabels},
+			outlier options = {opacity = .5},
+			outlier style from column = {xticklabels},
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% correlation between Plant STARR-seq and stable Arabidopsis lines
+	\coordinate (DL cor) at (DL strength -| \textwidth - \twothirdcolumnwidth, 0);
+	
+	\planticon[height = .5cm]{light} at ($(DL cor) + (.6, -.25)$);
+	
+	\begin{pggfplot}[%
+		at = {(DL cor)},
+		total width = \fourcolumnwidth,
+		xlabel = \textbf{Plant STARR-seq:} \enrichment,
+		ylabel = \textbf{stable lines:} \dlratio,
+		col title = \textit{Arabidopsis} vs. tobacco,
+		col title style = {left color = Arabidopsis!20, right color = tobacco!20},
+		legend style = {
+			at = {(1, .5)},
+			anchor = west,
+		},
+		scatter styles = {none,Zm-23177,At-1,At-13524,Sl-774,At-2020,Sb-11289,At-11716,At-12871,At-9661,Sl-12881},
+		ytick = {-6, -3, ..., 18},
+		legend cell align = left,
+		legend plot pos = left,
+	]{DL_cor}
+	
+		\pggf_trendline()
+	
+		\pggf_scatter(
+			mark size = 2,
+			style from column = enhancer,
+			y error = CI
+		)
+	
+		\pggf_annotate(scatter legend*)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+
+	%%% correlation of enhancer strength and gene expression data (light only) %%%
+	\coordinate (expression) at (DL strength -| \textwidth - \threecolumnwidth, 0);
+	
+	\planticon[height = .5cm]{light} at ($(expression) + (.6, -.25)$);
+	
+	\tikzset{
+		leaves/.code = {
+			\pgfmathsetlength{\templength}{-0.5\templength + 0.2 * rand * \templength}
+			\pgfkeysalso{
+				OkabeIto4,
+				xshift = \templength
+			}
+		},
+		other/.code = {
+			\pgfmathsetlength{\templength}{0.5\templength + 0.2 * rand * \templength}
+			\pgfkeysalso{
+				black,
+				xshift = \templength
+			}
+		},
+		set box width/.code = {
+			\pgfmathsetlength{\templength}{(\pgfkeysvalueof{/pgfplots/width} / 4) * 0.4}
+		}
+	}
+	
+	\def\tissue{\textbf{tissue:}\hspace*{-\groupplotsep}}
+	\def\leaves{leaves}
+	\def\other{other}
+
+	\begin{pggfplot}[%
+		at = {(expression)},
+		total width = \threecolumnwidth,
+		xlabel = species,
+		ylabel = Pearson correlation coefficient,
+		scatter styles = {tissue[empty legend],leaves,empty legend,other},
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		xticklabels are csnames,
+		col title = gene expression (\usename{light}),
+		title color = light,
+		xticklabel style = {font = \specieslongfalse},
+		legend columns = 2,
+		legend image post style = {xshift = -\templength},
+		legend style = {name = legend, at = {(1, 1)}},
+		only facet = 1
+	]{tamsACR_expression}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_boxplot(
+			color = light,
+			draw = black,
+			forget plot,
+			hide outliers
+		)
+	
+		\pggf_scatter(
+			style from column = tissue,
+			mark size = 1.5,
+			opacity = 0.75,
+			set box width
+		)
+	
+		\pggf_annotate(
+			scatter legend*
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{scheme}
+	\subfiglabel[xshift = -1.5em]{conditions}
+	\subfiglabel{PCA}
+	\subfiglabel{species}
+	\subfiglabel{ori cor}
+	\subfiglabel{orientation}
+	\subfiglabel{DL strength}
+	\subfiglabel{DL cor}
+	\subfiglabel{expression}
+	
+\end{tikzpicture}

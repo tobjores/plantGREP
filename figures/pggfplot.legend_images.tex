@@ -1,0 +1,248 @@
+%%% modify appearance of pgfplots legend images
+\pgfplotsset{
+	/pgfplots/legend image width/.store in = \pgfplotslegendimagewidth,
+	/pgfplots/legend image height/.store in = \pgfplotslegendimageheight,
+	/pgfplots/legend image size/.style = {legend image width = #1, legend image height = #1},
+	/pgfplots/legend image size = \baselineskip,
+	/pgfplots/line legend/.code = {%
+		\pgfkeysalso{%
+			/pgfplots/legend image code/.code = {%
+				\path[%
+					/pgfplots/mesh = false,%
+					bar width = 0pt,%
+					bar shift = 0pt,%
+					mark repeat = 2,%
+					mark phase = 2,%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] plot coordinates {%
+					(-0.5, 0)%
+					(0, 0)%
+					(0.5, 0)%
+				};%
+			}%
+		}%
+	},
+	/pgfplots/line legend,
+	/pgfplots/area legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\path[x = \pgfplotslegendimagewidth, y = \pgfplotslegendimageheight] (-0.5, -0.5) rectangle (0.5, 0.5);%
+		}%
+	},
+	/pgfplots/ybar legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\path[%
+				ybar,%
+				/tikz/.cd,%
+				bar width = .3333*\pgfplotslegendimagewidth,%
+				yshift = -0.5*\pgfplotslegendimageheight,%
+				bar shift = 0pt,%
+				x = \pgfplotslegendimagewidth,%
+				y = \pgfplotslegendimageheight,%
+			] plot coordinates {%
+				(-.3333, 0.6)%
+				(0, 1)%
+				(.3333, 0.4)%
+			};%
+		}%
+	},
+	/pgfplots/xbar legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\path[%
+				xbar,%
+				/tikz/.cd,%
+				bar width = .3333*\pgfplotslegendimageheight,%
+				xshift = -0.5*\pgfplotslegendimagewidth,%
+				bar shift = 0pt,%
+				x = \pgfplotslegendimagewidth,%
+				y = \pgfplotslegendimageheight,%
+			] plot coordinates {%
+				(0.4, -.3333)%
+				(1, 0)%
+				(0.6, .3333)%
+			};%
+		}%
+	},
+	/pgfplots/single ybar legend/.style = {area legend},
+	/pgfplots/single xbar legend/.style = {area legend},
+	/pgfplots/boxplot legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\if\relax#1\relax\else%
+				\def\pgfplots@loc@TMPa{#1}%
+				\def\pgfplots@loc@TMPb{x}%
+				\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+					\pgfkeys{/pgfplots/boxplot/draw direction = x}%
+				\else%
+					\def\pgfplots@loc@TMPb{y}%
+					\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+						\pgfkeys{/pgfplots/boxplot/draw direction = y}%
+					\else%
+						\pgfplots@error{Sorry, the key 'boxplot legend' does not know what to do with '#1'... accepted values are 'x' or 'y'.}%
+					\fi%
+				\fi%
+			\fi%
+			\path[%
+				x = \pgfplotslegendimagewidth/transformdirectionx(1),%
+				y = \pgfplotslegendimageheight/transformdirectiony(1),%
+				shift = {($(0, 0) - (axis cs: 0, 0)$)},%
+				/pgfplots/boxplot prepared = {%
+					lower whisker = -0.5,%
+					lower quartile = -0.25,%
+					median = 0,%
+					average = 0,%
+					upper quartile = 0.25,%
+					upper whisker = 0.5,%
+					draw position = 0,%
+					box extend = 1,%
+					variable width = false%
+				},%
+			] plot coordinates {};%
+		}%
+	},
+	/pgfplots/violin legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\if\relax#1\relax\else%
+				\def\pgfplots@loc@TMPa{#1}%
+				\def\pgfplots@loc@TMPb{x}%
+				\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+					\pgfkeys{/pgfplots/boxplot/draw direction = x}%
+				\else%
+					\def\pgfplots@loc@TMPb{y}%
+					\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+						\pgfkeys{/pgfplots/boxplot/draw direction = y}%
+					\else%
+						\pgfplots@error{Sorry, the key 'violin legend' does not know what to do with '#1'... accepted values are 'x' or 'y'.}%
+					\fi%
+				\fi%
+			\fi%
+			\if\boxplotvalue{draw direction}x\relax%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (-0.5, 0) to[out = 0, in = 180] (0, 0.5) to[out = 0, in = 180] (0.5, 0) to[out = 180, in = 0] (0, -0.5) to[out = 180, in = 0] cycle;%
+			\else%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (0, -0.5) to[out = 90, in = 270] (-0.5, 0) to[out = 90, in = 270] (0, 0.5) to[out = 270, in = 90] (0.5, 0) to[out = 270, in = 90] cycle;%
+			\fi%
+			\begin{scope}[fill = white, opacity = 1]%
+				\path[%
+					x = \pgfplotslegendimagewidth/transformdirectionx(1),%
+					y = \pgfplotslegendimageheight/transformdirectiony(1),%
+					shift = {($(0, 0) - (axis cs: 0, 0)$)},%
+					/pgfplots/boxplot prepared = {%
+						lower whisker = -0.5,%
+						lower quartile = -0.25,%
+						median = 0,%
+						average = 0,%
+						upper quartile = 0.25,%
+						upper whisker = 0.5,%
+						draw position = 0,%
+						box extend = 0.2,%
+						whisker extend = 0,%
+						variable width = false%
+					}%
+				] plot coordinates {};%
+			\end{scope}%
+		}%
+	},%
+	/pgfplots/half violin left legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\if\relax#1\relax\else%
+				\def\pgfplots@loc@TMPa{#1}%
+				\def\pgfplots@loc@TMPb{x}%
+				\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+					\pgfkeys{/pgfplots/boxplot/draw direction = x}%
+				\else%
+					\def\pgfplots@loc@TMPb{y}%
+					\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+						\pgfkeys{/pgfplots/boxplot/draw direction = y}%
+					\else%
+						\pgfplots@error{Sorry, the key 'half violin left legend' does not know what to do with '#1'... accepted values are 'x' or 'y'.}%
+					\fi%
+				\fi%
+			\fi%
+			\if\boxplotvalue{draw direction}x\relax%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (-0.5, 0) to[out = 0, in = 180] (0, -0.5) to[out = 0, in = 180] (0.5, 0) -- cycle;%
+			\else%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (0, -0.5) to[out = 90, in = 270] (-0.5, 0) to[out = 90, in = 270] (0, 0.5) -- cycle;%
+			\fi%
+			\begin{scope}[fill = white, opacity = 1]%
+				\path[%
+					x = \pgfplotslegendimagewidth/transformdirectionx(1),%
+					y = \pgfplotslegendimageheight/transformdirectiony(1),%
+					shift = {($(0, 0) - (axis cs: 0, 0)$)},%
+					/pgfplots/boxplot prepared = {%
+						lower whisker = -0.5,%
+						lower quartile = -0.25,%
+						median = 0,%
+						average = 0,%
+						upper quartile = 0.25,%
+						upper whisker = 0.5,%
+						draw position = 0,%
+						box extend = 0.1,%
+						whisker extend = 0,%
+						draw relative anchor = 1,%
+						variable width = false%
+					}%
+				] plot coordinates {};%
+			\end{scope}%
+		}%
+	},%
+	/pgfplots/half violin right legend/.style = {%
+		/pgfplots/legend image code/.code = {%
+			\if\relax#1\relax\else%
+				\def\pgfplots@loc@TMPa{#1}%
+				\def\pgfplots@loc@TMPb{x}%
+				\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+					\pgfkeys{/pgfplots/boxplot/draw direction = x}%
+				\else%
+					\def\pgfplots@loc@TMPb{y}%
+					\ifx\pgfplots@loc@TMPa\pgfplots@loc@TMPb%
+						\pgfkeys{/pgfplots/boxplot/draw direction = y}%
+					\else%
+						\pgfplots@error{Sorry, the key 'half violin right legend' does not know what to do with '#1'... accepted values are 'x' or 'y'.}%
+					\fi%
+				\fi%
+			\fi%
+			\if\boxplotvalue{draw direction}x\relax%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (-0.5, 0) to[out = 0, in = 180] (0, 0.5) to[out = 0, in = 180] (0.5, 0) -- cycle;%
+			\else%
+				\path[%
+					x = \pgfplotslegendimagewidth,%
+					y = \pgfplotslegendimageheight,%
+				] (0, -0.5) to[out = 90, in = 270] (0.5, 0) to[out = 90, in = 270] (0, 0.5) -- cycle;%
+			\fi%
+			\begin{scope}[fill = white, opacity = 1]%
+				\path[%
+					x = \pgfplotslegendimagewidth/transformdirectionx(1),%
+					y = \pgfplotslegendimageheight/transformdirectiony(1),%
+					shift = {($(0, 0) - (axis cs: 0, 0)$)},%
+					/pgfplots/boxplot prepared = {%
+						lower whisker = -0.5,%
+						lower quartile = -0.25,%
+						median = 0,%
+						average = 0,%
+						upper quartile = 0.25,%
+						upper whisker = 0.5,%
+						draw position = 0,%
+						box extend = 0.1,%
+						whisker extend = 0,%
+						draw relative anchor = 0,%
+						variable width = false%
+					}%
+				] plot coordinates {};%
+			\end{scope}%
+		}%
+	},%
+}

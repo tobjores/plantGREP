@@ -1,0 +1,173 @@
+\begin{tikzpicture}
+
+	%%% correlation of enhancer strength and gene expression data (without light) %%%
+	\coordinate (gene expression) at (0, 0);
+	
+	\tikzset{
+		leaves/.code = {
+			\pgfmathsetlength{\templength}{-0.5\templength + 0.2 * rand * \templength}
+			\pgfkeysalso{
+				OkabeIto4,
+				xshift = \templength
+			}
+		},
+		other/.code = {
+			\pgfmathsetlength{\templength}{0.5\templength + 0.2 * rand * \templength}
+			\pgfkeysalso{
+				black,
+				xshift = \templength
+			}
+		},
+		set box width/.code = {
+			\pgfmathsetlength{\templength}{(\pgfkeysvalueof{/pgfplots/width} / 4) * 0.4}
+		}
+	}
+	
+	\def\tissue{\textbf{tissue:}\hspace*{-\groupplotsep}}
+	\def\leaves{leaves}
+	\def\other{other}
+
+	\begin{pggfplot}[%
+		at = {(gene expression)},
+		total width = \threequartercolumnwidth,
+		xlabel = species,
+		ylabel = Pearson correlation coefficient,
+		scatter styles = {tissue[empty legend],leaves,empty legend,other},
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		xticklabel style = {font = \specieslongfalse},
+		legend columns = 2,
+		legend image post style = {xshift = -\templength},
+		legend style = {name = legend, at = {(1, 1)}},
+		skip facet = 1
+	]{tamsACR_expression}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_boxplot(
+			color from column name,
+			draw = black,
+			forget plot,
+			hide outliers
+		)
+	
+		\pggf_scatter(
+			style from column = tissue,
+			mark size = 1.5,
+			opacity = 0.75,
+			set box width
+		)
+	
+		\pggf_annotate(
+			scatter legend*,
+			only facet = 1
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% differentially expressed genes in light and dark %%%
+	\coordinate (light specificity) at (gene expression -| \textwidth - \fourcolumnwidth, 0);
+	
+	\planticon[height = .5cm]{arabidopsis} at ($(light specificity) + (.6, -.25)$);
+	
+	\expandafter\def\csname dark_down\endcsname{downregulated}
+	\expandafter\def\csname dark_up\endcsname{upregulated}
+	
+	\begin{pggfplot}[%
+		at = {(light specificity)},
+		total width = \fourcolumnwidth,
+		xlabel = gene expression in dark,
+		ylabel = linked ACR sequences (\%),
+		ymin = 0,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0, upper = .2},
+		xticklabels are csnames,
+		col title = light specificity,
+		col title style = {left color = light!20, right color = dark!20, middle color = white},
+		legend columns = 3,
+		legend style = {anchor = north, at = {(.5, 1)}}
+	]{tamsACR_dark_light_specificity}
+	
+		\pggf_bar(
+			ybar,
+			draw = black,
+			style from column = {fill = group}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% condition-/tissue-specificity of genes and corresponding ACRs %%%
+	\coordinate[yshift = - \columnsep] (specificity) at (gene expression |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(specificity)},
+		total width = \fourcolumnwidth,
+		xlabel = tissue specificity,
+		ylabel = condition specificity,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		col title = specificity,
+	]{tamsACR_specificity}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin(
+			fill = OkabeIto6,
+			shade = left,
+			shade color = white,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% enriched GO terms %%%
+	\coordinate (GO terms) at (specificity -| \textwidth - \threequartercolumnwidth, 0);
+	
+	\distance{col title.south}{col title.north}
+	
+	\begin{pggfplot}[%
+		at = {(GO terms)},
+		total width = \threequartercolumnwidth,
+		xlabel = species,
+		ylabel = GO term,
+		ylabel add to width = 70pt,
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		xticklabel style = {font = \specieslongfalse},
+		y dir = reverse,
+		enlargelimits = 0,
+		colormap = {TF}{color(0) = (gray!20) color(1) = (OkabeIto4)},
+		yticklabel style = {name = yticklabel},
+		legend style = {anchor = east, at = {(0, 1)}, yshift = .5\ydistance - .5\pgflinewidth},
+		legend columns = 3
+	]{tamsACR_GO-terms}
+	
+		\pggf_heatmap(
+			forget plot
+		)
+		
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{significant:}\hspace*{-\groupplotsep}} = {empty legend},
+				yes = {area legend, fill = OkabeIto4},
+				no = {area legend, fill = gray!20}
+			},
+			only facet = 1
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{gene expression}
+	\subfiglabel{light specificity}
+	\subfiglabel{specificity}
+	\subfiglabel{GO terms}
+	
+\end{tikzpicture}

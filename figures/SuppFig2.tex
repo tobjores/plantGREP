@@ -1,0 +1,36 @@
+\begin{tikzpicture}
+
+	%%% correlation of enhancer strength across conditions %%%
+	\coordinate (cor) at (0, 0);
+	
+	\tikzset{
+		condX/.store in = \condX,
+		condY/.store in = \condY
+	}
+	
+	\begin{pggfplot}[%
+		at = {(cor)},
+		total width = \textwidth,
+		total height = \textwidth,
+		xlabel = {\textbf{\expandafter\csname\condX\endcsname}: \enrichment},
+		ylabel = {\textbf{\expandafter\csname\condY\endcsname}: \enrichment},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		empty facet warning = false,
+		label each axis,
+	]{tamsACR_cor_conds}
+	
+		\pggf_annotate(
+			diagonal,
+			skip facets = {2, 3, 4, 7, 8, 12}
+		)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

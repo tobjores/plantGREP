@@ -1,0 +1,15 @@
+\rowcolors{2}{white}{gray!10}
+
+\pgfset{/pgf/number format/fixed}
+
+\begin{tabular}{rrrrrr}
+	\toprule
+	\textbf{category} & \textbf{\usename{Arabidopsis}} & \textbf{\usename{tomato}} & \textbf{\usename{maize}} & \textbf{\usename{sorghum}} & \textbf{total} \\
+	\midrule
+	ACR sequences & \pgfmathprintnumber{58068} & \pgfmathprintnumber{24166} & \pgfmathprintnumber{52282} & \pgfmathprintnumber{35314} & \pgfmathprintnumber{169830} \\
+	non-ACR sequences & \pgfmathprintnumber{1673} & \pgfmathprintnumber{2164} & \pgfmathprintnumber{1561} & \pgfmathprintnumber{1066} & \pgfmathprintnumber{6464} \\
+	genes of interest &  & \pgfmathprintnumber{15670} &  &  & \pgfmathprintnumber{15670} \\
+	known regulatory elements &  &  &  &  & \pgfmathprintnumber{36} \\
+	 &  &  &  &  & \textbf{\pgfmathprintnumber[assume math mode]{192000}} \\
+	\bottomrule
+\end{tabular}

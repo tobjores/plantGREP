@@ -1,0 +1,98 @@
+\begin{tikzpicture}
+	\def\NA{\relax}
+	\tikzset{
+		TF name/.style = {
+			/pgfplots/extra description/.append code = {
+				\node[anchor = west] at (1, .5) {\usename{#1}};
+			}
+		}
+	}
+
+	%%% TF-MoDISco patterns %%%
+	\coordinate (modisco) at (0, 0);
+	
+	\planticon[height = .5cm]{light} at ($(modisco) + (.6, -.25)$);
+	
+	% get number of bases in motif
+	\pgfplotstableread[col sep = tab]{rawData/modisco_motifs_neg_light_axes.tsv}\axistable
+	
+	\pgfplotstablegetelem{0}{xmax}\of\axistable
+	\pgfmathsetmacro{\nbases}{int(\pgfplotsretval)}
+
+	\begin{pggfplot}[%
+		at = {(modisco)},
+		width = \nbases * 2.6mm,
+		height = 6.6mm,
+		xlabel = {},
+		ylabel = {average DeepLIFT contribution score},
+		y decimals = 2,
+		enlarge x limits = 0,
+		enlarge y limits = .1,
+		xmajorticks = false,
+		row titles from table = false,
+		col title = {\raisebox{.5\baselineskip}{TF-MoDISco pattern}},
+		col title lines = 2,
+		xlabel height = 5pt,
+		tight,
+	]{modisco_motifs_neg_light}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\node[anchor = south west, node font = \figsmall, text depth = 0pt] at (current axis.south west) {pattern \pggfrowname};
+			},
+			skip facet = 13
+		)
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\node[anchor = north west, node font = \figsmall, text depth = 0pt] at (current axis.north west) {pattern \pggfrowname};
+			},
+			only facet = 13
+		)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	
+	%%% matching TF motifs %%%
+	\coordinate[xshift = \columnsep] (TFs) at (modisco -| pggfplot c1r1.east);
+	
+	% get number of bases in motif
+	\pgfplotstableread[col sep = tab]{rawData/modisco_TFs_neg_light_axes.tsv}\axistable
+	
+	\pgfplotstablegetelem{0}{xmax}\of\axistable
+	\pgfmathsetmacro{\nbases}{int(\pgfplotsretval)}
+	
+	\begin{pggfplot}[%
+		at = {(TFs)},
+		width = \nbases * 2.6mm,
+		height = 6.6mm,
+		xlabel = {},
+		ylabel = {information content},
+		ymin = 0,
+		ymax = 2,
+		ytick = {0, 1, 2},
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0, upper = .15},
+		xmajorticks = false,
+		row titles from table = false,
+		col title = {matched transcription\\factor binding motif},
+		col title lines = 2,
+		xlabel height = 5pt,
+		empty facet warning = false,
+		tight,
+	]{modisco_TFs_neg_light}
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{modisco}
+	\subfiglabel{TFs}
+
+\end{tikzpicture}

@@ -1,0 +1,139 @@
+\begin{tikzpicture}
+
+	%%% scheme of the TFBS insertion experiment %%%
+	\coordinate (scheme) at (0, 0);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, shift = {(.5\fourcolumnwidth, -.65)}] (seqs text) at (scheme) {50 random sequences without strong transcription factor binding sites};
+
+	\node[anchor = north, transparent, node font = \figsmall\bfseries, inner sep = .15em, shift = {(-1, -.1)}] (TFBS 1) at (scheme -| seqs text) {TFBS};
+	\node[anchor = south, transparent, node font = \figsmall\bfseries, inner sep = .15em, shift = {(1, 0)}] (TFBS 3) at (seqs text.north) {TFBS};
+	\node[transparent, node font = \figsmall\bfseries, inner sep = .15em] (TFBS 2) at ($(TFBS 1)!.5!(TFBS 3)$) {TFBS};
+	
+	\begin{pgfonlayer}{background}
+		\draw[thick] (scheme |- TFBS 1) ++(.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (scheme |- TFBS 2) ++(1, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (scheme |- TFBS 3) ++(1.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (seqs text.south) -- ++(0, -.45) coordinate (arrow end);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, yshift = -.65cm] (shuffle text) at (arrow end) {insert optimal transcription factor binding site in one of three positions};
+	
+	\node[anchor = north, fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(-1, -.1)}] (TFBS 1) at (arrow end -| seqs text) {TFBS};
+	\node[anchor = south, fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(1, 0)}] (TFBS 3) at (shuffle text.north) {TFBS};
+	\node[fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em] (TFBS 2) at ($(TFBS 1)!.5!(TFBS 3)$) {TFBS};
+	
+	\begin{pgfonlayer}{background}
+		\draw[thick] (scheme |- TFBS 1) ++(.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (scheme |- TFBS 2) ++(1, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (scheme |- TFBS 3) ++(1.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (shuffle text.south) -- ++(0, -.45) coordinate (arrow end);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, yshift = -.65cm] (measure text) at (arrow end) {measure enhancer strength of sequences with or without a binding site};
+	
+	\node[node font = \figsmall\bfseries, align = flush center, yshift = .325cm] (Plant STARR-seq) at (measure text.north) {Plant\\STARR-seq};
+	
+	\coordinate[xshift = -.3cm] (leaf center) at (Plant STARR-seq.west);
+	\planticon*[width = .6cm]{tobaccoLeaf} at (leaf center);
+	\begin{scope}[xscale = -1]
+		\planticon[width = .323cm]{pipe} at ($(leaf center) + (.35, .16)$);
+	\end{scope}
+	
+	\coordinate[xshift = .3cm] (protoplasts) at (Plant STARR-seq.east);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (90:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (162:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (234:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (306:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (18:.15)$);
+	\planticon[width = .3cm, rotate = 15]{maize} at ($(protoplasts) + (.375, -.1)$);
+
+
+	%%% comparison of TFBS insertion effect with ACR library %%%
+	\coordinate (correlation) at (scheme -| \textwidth - \threequartercolumnwidth, 0);
+	
+	\begin{pggfplot}[%
+		at = {(correlation)},
+		total width = \threequartercolumnwidth,
+		xlabel = {\textbf{transcription factor binding site insertion:} $\log_2$(effect size)},
+		ylabel = {\textbf{ACR library:} $\log_2$(effect size)},
+		title is csname,
+		title color from name,
+		xytick = {-2.1, -1.8, ..., 2.1}
+	]{TFBS_insertion_tamsACR}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_trendline()
+	
+		\pggf_scatter(
+			color from column name,
+			mark size = 1.5
+		)
+	
+		\pggf_stats(
+			stats = {n,spearman,rsquare}
+		)
+	
+	\end{pggfplot}
+
+
+	%%% effect of TFBS insertion %%%
+	\coordinate[yshift = -\columnsep] (insertion effect) at (scheme |- xlabel.south);
+	
+	\tikzset{
+		issignif/.code = {
+			\pgfmathparse{#1 <= 0.05}
+			\ifnum1=\pgfmathresult\relax
+				\pgfkeysalso{fill = OkabeIto4}
+			\else
+				\pgfkeysalso{fill = gray}
+			\fi
+		}
+	}
+
+	\begin{pggfplot}[%
+		at = {(insertion effect)},
+		total width = \textwidth,
+		xlabel = transcription factor family (motif ID),
+		ylabel = {\enrichment[rel. to no TFBS]},
+		ylabel add to width = .5\baselineskip,
+		xticklabel style = {anchor = east, rotate = 90, inner ysep = 0pt, inner xsep = .3333em},
+		xticklabels are csnames,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1},
+		ytick = {-10, -9, ..., 10},
+		legend style = {anchor = north east, at = {(1, 1)}},
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{TFBS_insertion_effect}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				significant = {boxplot legend = y, fill = OkabeIto4},
+				not significant = {boxplot legend = y, fill = gray}
+			},
+			only facet = 1
+		)
+	
+		\pggf_boxplot(
+			style from column = {issignif = p_value},
+			sample size = {font = \fontsize{4}{5}\selectfont},
+			forget plot
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{scheme}
+	\subfiglabel[yshift = .5\baselineskip]{insertion effect}
+	\subfiglabel{correlation}
+
+\end{tikzpicture}

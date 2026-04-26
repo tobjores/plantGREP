@@ -1,0 +1,198 @@
+\begin{tikzpicture}
+
+	\pgfplotsset{letter colors = DNA}
+	
+	%%% scheme of synthetic enhancer design %%%
+	\coordinate (scheme) at (0, 0);
+	
+	\pgfmathsetlength{\templength}{.45cm}
+	
+	\coordinate[yshift = -\columnsep - 2\templength] (TFs) at (scheme);
+	
+	% nucleotide composition
+	\coordinate[shift = {(.5\columnsep + \templength, 1.5\templength)}] (low GC) at (TFs);
+	\coordinate[shift = {(.5\columnsep + \templength, -1.5\templength)}] (high GC) at (TFs);
+	
+	\pgfplotstableread[col sep = tab]{rawData/synEnh_nucFreq.tsv}\nucFreqTable
+	\pgfplotstableforeachcolumn\nucFreqTable\as\GCbin{
+		\pgfplotstablegetelem{0}{\GCbin}\of\nucFreqTable
+		\foreach [expand list, evaluate = \y as \x using 180 - \y, remember = \x as \lastx (initially 180)] \base/\y in {\pgfplotsretval}{
+			\fill[letter\base col!50] (\GCbin) -- ++(\lastx:\templength) arc[start angle = \lastx, end angle = \x, radius = \templength] coordinate[pos = .5] (c\base) -- cycle;
+			\node[font = \figsmall] at ($(\GCbin)!.6!(c\base)$) {\base};
+		}
+	}
+	
+	% sequences
+	\coordinate[xshift = .5\columnsep + \templength] (seqs) at (TFs -| low GC);
+	\coordinate (low GC seq) at (low GC -| seqs);
+	\coordinate (high GC seq) at (high GC -| seqs);
+	
+	\distance{seqs}{\threecolumnwidth - .5\columnsep, 0}
+	
+	\foreach \x/\y in {low GC/south, high GC/north}{
+		\draw[line width = .06cm, \x] (\x\space seq) node[anchor = \y\space west, text = black, text depth = 0pt, xshift = -.5\columnsep] {25 sequences with \textbf{\x} content} -- ++(\xdistance, 0) coordinate[pos = .165] (\x\space 1) coordinate[pos = .5] (\x\space 2) coordinate[pos = .835] (\x\space 3) coordinate (\x\space seq end);
+	}
+	
+	% TFs
+	\foreach \x in {1, 2, 3}{
+		\node[fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em] (TFBS \x) at (TFs -| low GC \x) {TFBS};
+		
+		\draw[-Latex, shorten > = .08cm, DodgerBlue1!50] (TFBS \x.north) ++(0, .05) -- (low GC \x);
+		\draw[-Latex, shorten > = .08cm, DodgerBlue1!50] (TFBS \x.south) ++(0, -.05) -- (high GC \x);
+	}
+	
+	\node[anchor = base, node font = \figsmall] at ($(TFBS 1.base)!.5!(TFBS 2.base)$) {and};
+	\node[anchor = base, node font = \figsmall] at ($(TFBS 2.base)!.5!(TFBS 3.base)$) {and};
+
+	% tested TFBSs
+	\coordinate[yshift = -.5\columnsep - \templength] (TFBSs) at (scheme |- high GC);
+	
+	\node[anchor = north, font = \bfseries] (title) at ($(TFBSs)!.5!(TFBSs -| low GC seq end)$) {transcription factor binding sites (TFBS)\settowidth{\global\templength}{\figsmall tobacco-specific:}};
+
+	\pgfplotstableread[col sep = tab]{rawData/synEnh_TF_specificities.tsv}\synEnhTFtable
+
+	\pgfplotstableforeachcolumnelement{specificity}\of\synEnhTFtable\as\x{
+		\pgfmathsetmacro{\xi}{int(\pgfplotstablerow + 1)}
+		\node[anchor = base west, node font = \figsmall, yshift = -\xi*1.15\baselineskip, text width = \templength, align = right] at (title.base west) {\x:};
+	}
+	\pgfplotstableforeachcolumnelement{TF}\of\synEnhTFtable\as\x{
+		\pgfmathsetmacro{\xi}{int(\pgfplotstablerow + 1)}
+		\node[anchor = base east, node font = \figsmall, yshift = -\xi*1.15\baselineskip] (TFBS name \xi) at (title.base east) {\usename{\x}};
+	}
+
+	% connect TFBS list with TFBSs
+	\draw[decorate, decoration = {brace, amplitude = .3cm}] ($(TFBS name 1.north east) + (-.1, 0)$) -- ($(TFBS name 6.south east) + (-.1, 0)$) coordinate[pos = .5, xshift = .3cm - \pgflinewidth] (curly);
+	\draw[thick, -Latex, shorten > = .05cm, rounded corners = .15cm] (curly) -- (curly -| \threecolumnwidth - .5\pgflinewidth, 0) |- (TFBS 3.east);
+	
+	
+	%%% species-/condition-specificity of synthetic enhancers %%%
+	\coordinate (specificity) at (scheme -| \textwidth - \twothirdcolumnwidth, 0);
+
+	\tikzset{
+		species-specificity/.style = {left color = tobacco!20, right color = maize!20, middle color = white},
+		light-specificity/.style = {left color = light!20, right color = dark!20, middle color = white},
+		temperature-specificity/.style = {left color = warm!20, right color = cold!20, middle color = white}
+	}
+	
+	\expandafter\def\csname species-specificity\endcsname{species specificity}
+	\expandafter\def\csname light-specificity\endcsname{light specificity}
+	\expandafter\def\csname temperature-specificity\endcsname{temperature specificity}
+	
+	\def\noTFBS{\vphantom{tblih}none}
+	\expandafter\def\csname tobacco-specific\endcsname{\vphantom{tblih}tobacco-\\specific}
+	\expandafter\def\csname maize-specific\endcsname{\vphantom{tblih}maize-\\specific}
+	\expandafter\def\csname light-specific\endcsname{\vphantom{tblih}light-\\specific}
+	\expandafter\def\csname dark-specific\endcsname{\vphantom{tblih}dark-\\specific}
+	\expandafter\def\csname warm-specific\endcsname{\vphantom{tblih}warm-\\specific}
+	\expandafter\def\csname cold-specific\endcsname{\vphantom{tblih}cold-\\specific}
+	
+	\begin{pggfplot}[%
+		at = {(specificity)},
+		total width = \twothirdcolumnwidth,
+		xlabel = inserted transcription factor binding site,
+		ylabel = $\log_2$(specificity),
+		enlarge x limits = {abs = 1, rel = 0.005},
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		title is csname,
+		title style from name,
+		ytick = {-12, -10, ..., 12},
+		xticklabel style = {align = center},
+		xticklabels are csnames,
+		tight y
+	]{synEnh_specificity}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .25) -- (-.25, 4.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{tobacco}}};
+				\draw[thick, -Latex] (4.25, -.25) -- (4.25, -3.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{maize}}};
+			},
+			only facet = 1
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .5) -- (-.25, 4.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{light}}};
+				\draw[thick, -Latex] (4.25, -.5) -- (4.25, -3.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{dark}}};
+			},
+			only facet = 2
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\draw[thick, -Latex] (-.25, .5) -- (-.25, 4.5) node[pos = .45, anchor = north, rotate = 90, align = center, font = \figsmall] {more active\\in \textbf{\usename{warm}}};
+				\draw[thick, -Latex] (4.25, -.5) -- (4.25, -3.5) node[pos = .45, anchor = north, rotate = -90, align = center, font = \figsmall] {more active\\in \textbf{\usename{cold}}};
+			},
+			only facet = 3
+		)
+	
+		\pggf_boxplot(
+			style from column = {fill = target_species},
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+
+	%%% strength of species /condition-specific synthetic enhancers %%%
+	\coordinate[yshift = -\columnsep] (strength) at (scheme |- xlabel.south);
+	
+	\colorlet{high}{OkabeIto4}
+	\colorlet{any}{gray}
+	\colorlet{low}{OkabeIto2}
+	
+	\expandafter\def\csname tobacco-specific\endcsname{\vphantom{tblih}tobacco-specific}
+	\expandafter\def\csname maize-specific\endcsname{\vphantom{tblih}maize-specific}
+	\expandafter\def\csname light-specific\endcsname{\vphantom{tblih}light-specific}
+	\expandafter\def\csname dark-specific\endcsname{\vphantom{tblih}dark-specific}
+	\expandafter\def\csname warm-specific\endcsname{\vphantom{tblih}warm-specific}
+	\expandafter\def\csname cold-specific\endcsname{\vphantom{tblih}cold-specific}
+	
+	\begin{pggfplot}[%
+		at = {(strength)},
+		total width = \textwidth,
+		xlabel = inserted transcription factor binding site,
+		ylabel = \enrichment,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.15},
+		title is csname,
+		title color from name,
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em},
+		xticklabels are csnames,
+		legend style = {anchor = north east, at = {(1, 1)}},
+		legend columns = 2,
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{synEnh_specific_strength}
+	
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{expected activity:}\hspace*{-\groupplotsep}} = {empty legend},
+				high = {boxplot legend = y, fill = high},
+				\relax = {empty legend},
+				any = {boxplot legend = y, fill = any},
+				\relax = {empty legend},
+				low = {boxplot legend = y, fill = low}
+			},
+			only facet = 1
+		)
+	
+		\pggf_hline(densely dotted)
+	
+		\pggf_boxplot(
+			style from column = {fill = target},
+			cld = {anchor = south, text depth = 0pt}{max},
+			forget plot
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{scheme}
+	\subfiglabel{strength}
+	\subfiglabel{specificity}
+
+\end{tikzpicture}

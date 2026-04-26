@@ -1,0 +1,111 @@
+\begin{tikzpicture}
+
+	%%% linear model for TF hits %%%
+	\coordinate (lm kmers) at (0, 0);
+	
+	% sequence
+	\node[anchor = west, node font = \figsmall\courier, shift = {(0, -1.25)}] (seq) at (lm kmers) {%
+		\pgfmathsetseed{928}\randomNucs{10}\,\raisebox{.5ex}{\dots}\,\randomNucs{10}%
+	};
+	
+	\draw[very thick, -Latex] (seq.east) -- ++(.5, 0) coordinate (ohe);
+	
+	% kmers
+	\node[anchor = west, node font = \figsmall] (kmers) at (ohe) {
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{ccccc}%
+			\toprule%
+			\textbf{kmer-1} & \textbf{kmer-2} & \raisebox{.5ex}{\textbf{\dots}} & \textbf{kmer-4095} & \textbf{kmer-4096} \\
+			\figtiny AAAAAA & \figtiny AAAAAC & \raisebox{.5ex}{\dots} & \figtiny TTTTTG & \figtiny TTTTTG \\%
+			\midrule%
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\raisebox{.5ex}{\dots} &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult &
+			\pgfmathparse{int(random(4) - 1)}\pgfmathresult \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	\draw[very thick, -Latex] (kmers.east) -- ++(.5, 0) coordinate[xshift = .3333em] (model);
+	
+	% model
+	\node[right = .05cm of model, align = flush right, font = \figsmall, yshift = -.5\baselineskip] (lm) {%
+		$\log_2(\text{enhancer strength}) =$\hspace*{7em}\\
+		$\beta_0 + \beta_1\text{kmer-1} + \beta_2\text{kmer-2} + \dots$\\
+		$+ \beta_{4095}\text{kmer-4095} + \beta_{4096}\text{kmer-4096}$%
+	};
+	
+	\begin{pgfonlayer}{background}
+		\draw[fill = OkabeIto5!25, rounded corners] (model) |- ($(lm.north east) + (.05, .05cm + \baselineskip)$) node[pos = .75, anchor = north, fill = none, draw = none, text = black, font = \bfseries] (model top) {linear regression} |- ($(lm.south west) + (-.05, -.05)$) coordinate[pos = .25] (model out) coordinate[pos = .75] (model bottom) -- cycle;
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (model out) ++(.3333em, 0) -- ++(.5, 0) coordinate (predictions);
+	
+	% predictions
+	\pgfmathsetmacro{\predLight}{2 + rand * 4}
+	\pgfmathsetmacro{\predDark}{\predLight + rand * 0.5 * \predLight}
+	\pgfmathsetmacro{\predWarm}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predCold}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predMaize}{1.5 + rand * 3}
+	
+	\node[anchor = west, node font = \figsmall, inner xsep = 0pt, xshift = .3333em] (predictions) at (predictions) {%
+		\pgfmathsetseed{928}%
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrrr}%
+			\toprule%
+			\textbf{\usename{light}} & \textbf{\usename{dark}} & \textbf{\usename{warm}} & \textbf{\usename{cold}} & \textbf{\usename{maize}} \\%
+			\midrule%
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predLight} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predDark} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predWarm} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predCold} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predMaize} \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	% text
+	\node[anchor = south, font = \strut, yshift = .3em] at (seq |- model top.north) {170\,bp sequence};
+	\node[anchor = south, font = \strut, yshift = .3em] at (kmers |- model top.north) {count occurence of all possible 6-mers};
+	\node[anchor = south, font = \strut, yshift = .3em] at (model top.north) {linear model};
+	\node[anchor = south, font = \strut, yshift = .3em] (blub) at (predictions |- model top.north) {predict $\log_2$(enhancer strength)};
+	
+	
+	%%% enhancer strength predictions from linear model based on kmer counts %%%
+	\coordinate[yshift = -\columnsep] (cor kmers) at (lm kmers |- model bottom);
+	
+	\begin{pggfplot}[%
+		at = {(cor kmers)},
+		total width = \textwidth,
+		xlabel = {\textbf{measurement}: \enrichment},
+		ylabel = {\textbf{prediction}:\\\enrichment},
+		facet 1/.append style = {
+			pggf colorbar = {%
+				title = count,
+				log2,
+				horizontal,
+				ytick = {0, 3, ..., 15}
+			}
+		},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		ylabel add to width = .6\baselineskip,
+		tight y
+	]{lm_kmers_predictions}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}	
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{lm kmers}
+	\subfiglabel{cor kmers}
+	
+\end{tikzpicture}

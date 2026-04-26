@@ -1,0 +1,35 @@
+\rowcolors{2}{gray!10}{white}
+
+\pgfplotstabletypeset[
+	col sep = tab,
+	string type,
+	begin table = {\begin{longtable}[l]},
+	end table = {\end{longtable}},
+	every head row/.append style = {
+		output empty row,
+		before row = {%
+			\hiderowcolors
+			\caption{\captiontitle{Tomato genes of interest with sequences tiled across their upstream regions}}\label{stab:tomato_ROIs}\\%
+			\showrowcolors
+			\toprule
+			\rowcolor{white}\textbf{gene ID} & \textbf{description} & \textbf{\# sequences} \\
+			\midrule
+			\endfirsthead
+			\toprule
+			\rowcolor{white}\textbf{gene ID} & \textbf{description} & \textbf{\# sequences} \\
+			\midrule
+			\endhead
+			\bottomrule
+			\endfoot
+		},
+	},
+	columns/gene ID/.style = {
+		column type = r
+	},
+	columns/description/.style = {
+		column type = l
+	},
+	columns/tiles/.style = {
+		column type = r
+	}
+]{../data/extra_files/Tomato_ROIs.tsv}

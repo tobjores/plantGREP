@@ -1,0 +1,45 @@
+\begin{tikzpicture}
+
+	%%% dual-luciferase construct
+	\coordinate[yshift = -\columnsep] (DL construct) at (0, 0);
+	
+	\coordinate[shift = {(.1, -1)}] (construct) at (DL construct);
+	
+	\draw[dashed, thick] (construct) -- ++(.5, 0) coordinate (c1);
+	
+	\node[draw = black, thin, anchor = west, text depth = 0pt] (Luc) at ($(c1) + (.1, 0)$) {Luc};
+	
+	\draw[line width = .2cm, DarkOliveGreen3] (Luc.east) ++(.4, 0) coordinate (c2) -- ++(.5, 0) coordinate[pos = .5] (pro1) coordinate (c3);
+	\draw[-{Stealth[round]}, thick] (c2) ++(-.5\pgflinewidth, 0) |- ++(-.4, .3);
+	
+	\node[draw = black, thin, anchor = west, text depth = 0pt] (BlpR) at ($(c3) + (.3, 0)$) {BlpR};
+	
+	\draw[line width = .2cm, PaleGreen3] (BlpR.east) ++(.4, 0) coordinate (c4) -- ++(.5, 0) coordinate (c5);
+	\draw[-{Stealth[round]}, thick] (c4) ++(-.5\pgflinewidth, 0) |- ++(-.4, .3);
+	
+	\draw[line width = .25cm, -Triangle Cap, 35Senhancer]  (c5) ++(.4, 0) -- ++(.6, 0) coordinate[pos = .5] (enh) coordinate (c6);
+	
+	\draw[line width = .2cm, 35Spromoter] (c6) ++(.1, 0) -- ++(.3, 0) coordinate[pos = .5] (pro2) coordinate (c7);
+	\draw[-{Stealth[round]}, thick] (c7) ++(.5\pgflinewidth, 0) |- ++(.4, .3);
+	
+	\node[draw = black, thin, anchor = west, text depth = 0pt] (NLuc) at ($(c7) + (.4, 0)$) {NanoLuc};
+	
+	\draw[dashed, thick] (NLuc.east) ++(.1, 0) coordinate (c8) -- ++(.5, 0) coordinate (construct end);
+	
+	\begin{pgfonlayer} {background}
+		\draw[thick] (c1) -- (Luc.west) (Luc.east) -- (BlpR.west) (BlpR.east) -- (NLuc.west) (NLuc.east) -- (c8);
+	\end{pgfonlayer}
+	
+	\draw[Latex-] (enh) ++(0, .175) -- ++(0, .4) node[anchor = south, text depth = 0pt] {enhancer};
+	\draw[Latex-] (pro1) ++(0, -.15) -- ++(0, -.4) node[anchor = north, text depth = 0pt] {\textit{AtUBQ10} promoter};
+	\draw[Latex-] (pro2) ++(0, -.15) -- ++(0, -.4) node[anchor = north, text depth = 0pt] (l35Spr) {35S minimal promoter};
+
+	\draw[decorate, decoration = {brace, amplitude = .4cm, aspect = .825}] (l35Spr.south -| construct end) -- (l35Spr.south -| construct) coordinate[pos = .825, yshift = -.4cm] (curly);
+	
+	\draw[ultra thick, -Latex] (curly) ++(0, .75\pgflinewidth) -- ++(0, -.3) arc[start angle = 180, end angle = 270, radius = .8cm] -- ++(.3, 0) coordinate[shift = {(1, .1)}] (Arabidopsis);
+	\planticon[scale = .9]{arabidopsis} at (Arabidopsis);
+	\node [anchor = north east, align = center, inner xsep = 0pt, shift = {(.1, -.1)}] at (curly) {integrate\\into\\\Arabidopsis\\genome};
+	
+	\draw[ultra thick, -Latex] (Arabidopsis) ++(1, -.1) -- ++(.8, 0) node[anchor = west, align = center] {measure\\luciferase (Luc)\\and nanoluciferase\\(NanoLuc) activity};
+
+\end{tikzpicture}

@@ -1,0 +1,155 @@
+\begin{tikzpicture}
+
+	\pggfset{
+		ylabel style = {xshift = -1em},
+	}
+
+	%%% Calculate plot width %%%
+	\makeatletter
+		\figlarge
+		\pgfmathsetlength{\templength}{(\textwidth - \columnsep - 2\pggf@ylabelwidth - 2\groupplotsep - 2 * (.85 * \baselineskip + 2 * \pgfkeysvalueof{/pgf/inner ysep})) / 4}
+		\fignormal
+	\makeatother
+
+	%%% Replicate correlation light %%%
+	\coordinate (light) at (0, 0);
+	
+	\planticon[height = .5cm]{light} at ($(light) + (.25, -.75)$);
+	
+	\begin{pggfplot}[%
+		at = {(light)},
+		width = \templength,
+		xlabel = \enrichment,
+		ylabel = \enrichment,
+		row title = {light},
+		row title is csname,
+		row title color from name,
+		xytick = {-12, -10, ..., 12},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}}
+	]{tamsACR_cor_reps_light}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% Replicate correlation dark %%%
+	\coordinate[xshift = \columnsep] (dark) at (pggfplot c3r1.outer north east);
+	
+	\planticon[height = .5cm]{dark} at ($(dark) + (.25, -.75)$);
+	
+	\begin{pggfplot}[%
+		at = {(dark)},
+		width = \templength,
+		xlabel = \enrichment,
+		ylabel = \enrichment,
+		col title = 1 vs. 2,
+		row title = {dark},
+		row title is csname,
+		row title color from name,
+		xytick = {-12, -10, ..., 12},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}}
+	]{tamsACR_cor_reps_dark}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% Replicate correlation warm %%%
+	\coordinate[yshift = -\columnsep] (warm) at (light |- xlabel.south);
+	
+	\planticon[height = .5cm]{warm} at ($(warm) + (.25, -.75)$);
+	
+	\begin{pggfplot}[%
+		at = {(warm)},
+		width = \templength,
+		xlabel = \enrichment,
+		ylabel = \enrichment,
+		row title = {warm},
+		row title is csname,
+		row title color from name,
+		xytick = {-12, -10, ..., 12},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}}
+	]{tamsACR_cor_reps_warm}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% Replicate correlation cold %%%
+	\coordinate[xshift = \columnsep] (cold) at (pggfplot c3r1.outer north east);
+	
+	\planticon[height = .5cm]{cold} at ($(cold) + (.25, -.75)$);
+	
+	\begin{pggfplot}[%
+		at = {(cold)},
+		width = \templength,
+		xlabel = \enrichment,
+		ylabel = \enrichment,
+		col title = 1 vs. 2,
+		row title = {cold},
+		row title is csname,
+		row title color from name,
+		xytick = {-12, -10, ..., 12},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}}
+	]{tamsACR_cor_reps_cold}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% Replicate correlation maize %%%
+	\coordinate[yshift = -\columnsep] (maize) at (light |- xlabel.south);
+	
+	\planticon[height = .5cm]{maize} at ($(maize) + (.25, -.75)$);
+	
+	\begin{pggfplot}[%
+		at = {(maize)},
+		width = \templength,
+		xlabel = \enrichment,
+		ylabel = \enrichment,
+		col title = 1 vs. 2,
+		row title = {maize},
+		row title is csname,
+		row title color from name,
+		xytick = {-12, -10, ..., 12},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		tight y
+	]{tamsACR_cor_reps_maize}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{light}
+	\subfiglabel{dark}
+	\subfiglabel{warm}
+	\subfiglabel{cold}
+	\subfiglabel{maize}
+
+\end{tikzpicture}

@@ -1,0 +1,49 @@
+\begin{tikzpicture}
+
+	%%% in silico evolution: species-/condition-specificity %%%
+	\coordinate (evo specificity) at (0, 0);
+	
+	\colorlet{high}{OkabeIto4}
+	\colorlet{any}{gray}
+	\colorlet{low}{OkabeIto2}
+	
+	\begin{pggfplot}[%
+		at = {(evo specificity)},
+		yshift = -\baselineskip,
+		total width = \textwidth,
+		xlabel = \textit{in silico} evolution objective,
+		ylabel = \enrichment,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em},
+		legend style = {anchor = south east, at = {(1, 1)}, yshift = 2\baselineskip},
+		legend columns = 4,
+		legend image width = .75\baselineskip,
+		every legend image post/.append style = {fill opacity = 0.5},
+		tight y
+	]{evolution_objectives}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_annotate(
+			manual legend = {
+				{\textbf{expected activity:}\hspace*{-\groupplotsep}} = {empty legend},
+				high = {violin legend = y, fill = high},
+				any = {violin legend = y, fill = any},
+				low = {violin legend = y, fill = low}
+			},
+			only facet = 5
+		)
+	
+		\pggf_violin(
+			style from column = {fill = target},
+			cld = {anchor = south, text depth = 0pt}{max},
+			forget plot
+		)
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

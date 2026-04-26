@@ -1,0 +1,178 @@
+\usetikzlibrary{decorations.markings}
+
+\begin{tikzpicture}
+	
+	\defname[named]{strong_enh}{strong enhancers}{35Senhancer}
+	\defname[named]{medium_enh}{medium enhancers}{strong_enh}\colorlet{medium_enh}{medium_enh!67!black}
+	\defname[named]{weak_enh}{weak enhancers}{strong_enh}\colorlet{weak_enh}{weak_enh!33!black}
+	\defname[named]{inactive}{inactive sequences}{gray}
+	\defname[named]{repressive}{repressive elements}{Firebrick1}
+	
+	%%% scheme of category definition %%%
+	\coordinate (category definition) at (0, 0);
+	
+	\tikzset{
+		save coordinate/.style = {
+			postaction = decorate,
+			decoration = {
+				markings,
+				mark = at position 0.55 with {
+					\coordinate (#1);
+				}
+			}
+		},
+		mean/.style = {
+			densely dashed,
+			save coordinate = mean
+		},
+		mean-1/.style = {
+			densely dotted,
+			save coordinate = mean-1
+		},
+		mean+1/.style = {
+			densely dotted,
+			save coordinate = mean+1
+		},
+		mean+2/.style = {
+			densely dotted,
+			save coordinate = mean+2
+		},
+		mean+3/.style = {
+			densely dotted,
+			save coordinate = mean+3
+		},
+		max/.style = {
+			draw = none,
+			save coordinate = max
+		},
+		min/.style = {
+			draw = none,
+			save coordinate = min
+		}
+	}
+	
+	\begin{pggfplot}[%
+		at = {(category definition)},
+		total width = \fourcolumnwidth,
+		xlabel = {},
+		ylabel = {\enrichment[GC-normalized]},
+		ylabel style = {inner xsep = 0pt},
+		ylabel add to width = .33\baselineskip,
+		enlarge x limits = {rel = 0, abs = .75},
+		enlarge y limits = {lower = 0.1},
+		xtick = {1, 5},
+		xticklabels = {non-ACR\\sequences, all test\\sequences},
+		xticklabel style = {align = center},
+		col title = light,
+		title is csname,
+		title color from name,
+		axis background/.style = {fill = none},
+		tight y
+	]{category_def}
+	
+		\pggf_violin(
+			fill = light
+		)
+	
+		\pggf_hline(
+			style from column = intercept_id
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = east, fill = white, font = \figsmall, xshift = -.5em] at (mean) {mean};
+				\draw[{|<[width = 3]}-{>|[width = 3]}, shorten both = -.5\pgflinewidth] (mean) -- (mean-1) node[pos = .5, anchor = west, font = \figsmall] {sd};
+				\draw[{|<[width = 3]}-{>|[width = 3]}, shorten both = -.5\pgflinewidth] (mean) -- (mean+1) node[pos = .5, anchor = west, font = \figsmall] {sd};
+				\draw[{|<[width = 3]}-{>|[width = 3]}, shorten both = -.5\pgflinewidth] (mean+1) -- (mean+2) node[pos = .5, anchor = west, font = \figsmall] {sd};
+				\draw[{|<[width = 3]}-{>|[width = 3]}, shorten both = -.5\pgflinewidth] (mean+2) -- (mean+3) node[pos = .5, anchor = west, font = \figsmall] {sd};
+			}
+		)
+	
+	\end{pggfplot}
+	
+	\begin{pgfonlayer}{background}
+		\shade[left color = white, right color = strong_enh!50] (mean+3) -| (max -| pggfplot c1r1.east) node[pos = .75, anchor = west, node font = \figsmall, xshift = .225cm] {strong enhancers} -- (pggfplot c1r1.north east) -| cycle;
+		\shade[left color = white, right color = medium_enh!50] (mean+2) -| (mean+3 -| pggfplot c1r1.east) node[pos = .75, anchor = west, node font = \figsmall, xshift = .35cm] {medium enhancers} -| cycle;
+		\shade[left color = white, right color = weak_enh!50] (mean+1) -| (mean+2 -| pggfplot c1r1.east) node[pos = .75, anchor = west, node font = \figsmall, xshift = .225cm] {weak enhancers} -| cycle;
+		\shade[left color = white, right color = black!50] (mean-1) -| (mean+1 -| pggfplot c1r1.east) node[pos = .75, anchor = west, node font = \figsmall, xshift = .35cm] (inactive) {inactive sequences} -| cycle;
+		\shade[left color = white, right color = repressive!50] (mean-1) -| (min -| pggfplot c1r1.east) node[pos = .75, anchor = west, node font = \figsmall, xshift = .225cm] {repressive elements} -- (pggfplot c1r1.south east) -| cycle;
+	\end{pgfonlayer}
+	
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (max -| pggfplot c1r1.east) -- (mean+3 -| pggfplot c1r1.east);
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .2cm}] (mean+3 -| pggfplot c1r1.east) -- (mean+2 -| pggfplot c1r1.east);
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (mean+2 -| pggfplot c1r1.east) -- (mean+1 -| pggfplot c1r1.east);
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .2cm}] (mean+1 -| pggfplot c1r1.east) -- (mean-1 -| pggfplot c1r1.east);
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (mean-1 -| pggfplot c1r1.east) -- (min -| pggfplot c1r1.east);
+
+
+	%%% number of sequences in each category %%%
+	\coordinate[xshift = \columnsep] (category numbers) at (category definition -| inactive.east);
+	
+	\distance{category numbers}{\textwidth, 0}
+	
+	\begin{pggfplot}[
+		at = {(category numbers)},
+		total width = \xdistance,
+		xlabel = number of test sequences (\times \pgfmathprintnumber{1000}),
+		ylabel = {~},
+		ylabel style = {inner sep = 0pt},
+		ylabel add to width = 34pt,
+		yticklabels are csnames,
+		title is csname,
+		title color from name,
+		xmin = 0,
+		enlarge x limits = {lower = 0},
+		scaled x ticks = manual:{}{\pgfmathparse{##1/1000}},
+		y dir = reverse,
+		hide legend
+	]{category_numbers}
+	
+		\pggf_bar(
+			xbar,
+			draw = black,
+			style from column = {fill = yticklabels},
+			point meta = x,
+			nodes near coords,
+			nodes near coords align = {horizontal},
+			nodes near coords style = {
+				text = black,
+				opacity = 1,
+				font = \figsmall,
+				text depth = 0pt,
+				/pgf/number format/fixed
+			},
+			coordinate style/.condition = {x > 150000}{anchor = east}
+		)
+	
+	\end{pggfplot}
+
+
+	%%% correlation between TF effects and rel. enrichment of TFBSs in sequences grouped by their strength %%%
+	\coordinate[yshift = -\columnsep] (correlation) at (category definition |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(correlation)},
+		total width = \textwidth,
+		xlabel = {$\log_2$(effect size)},
+		ylabel = {$\log_2$(average TFBS counts, normalized to inactive sequences)},
+		ylabel add to width = .33\baselineskip,
+		xtick = {-1.2, -.9, ..., 1.2},
+		title is csname,
+		title color from name,
+	]{categories_TFs}
+	
+		\pggf_scatter(color from col name)
+	
+		\pggf_trendline(/pgfplots/color from row name)
+	
+		\pggf_stats(stats = {slope, goodness of fit})
+	
+	\end{pggfplot}
+
+
+	%%% subfigure labels %%%
+	\subfiglabel{category definition}
+	\subfiglabel{category numbers}
+	\subfiglabel{correlation}
+
+\end{tikzpicture}

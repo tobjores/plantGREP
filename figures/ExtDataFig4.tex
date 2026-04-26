@@ -1,0 +1,132 @@
+\begin{tikzpicture}
+
+	\pgfplotsset{set layers}
+	
+	\makeatletter
+		\setlength\templength{\pggf@ylabelwidth}
+	\makeatother
+
+	%%% enhancer strength by GC content %%%
+	\coordinate (GC) at (0, 0);
+	
+	\begin{pggfplot}[%
+		anchor = north west,
+		at = {($(GC) + (\templength, 0)$)},
+		total width = \textwidth,
+		xlabel = GC content (\%),
+		ylabel = \enrichment,
+		xticklabels are bins,
+		ytick = {-12, -10, ..., 12},
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+	]{tamsACR_GC}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin(
+			color from col name,
+			draw = black,
+			shade = right,
+			shade color = white,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	\coordinate (GC plot top) at (pggfplot c1r1.above north);
+	
+	
+	%%% distribution of GC content in tamsACR sequences %%%
+	\coordinate[yshift = -\columnsep] (GC density) at (GC |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		anchor = north east,
+		at = {($(GC density) + (\twothirdcolumnwidth, 0)$)},
+		total width = \twothirdcolumnwidth,                     
+		xlabel = GC content (\%),
+		ylabel = species,
+		yticklabels are csnames,
+		ylabel add to width = 22pt,
+		scale ridges = 2,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = .075},
+		tight y
+	]{GC_distribution}
+	
+		\pggf_ridgeline(
+			close density,
+			style from column = yticklabels,
+			draw = black,
+			fill = pgffillcolor!50!white
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% compare average GC content of ACRs to whole genome %%%
+	\coordinate (ACR vs genome) at (GC density -| \textwidth - \threecolumnwidth, 0);
+	
+	% get ymin and ymax from last plot
+	\pgfplotstableread[col sep = tab]{rawData/GC_distribution_axes.tsv}\axistable
+	
+	\pgfplotstablegetelem{0}{ymin}\of\axistable
+	\edef\ymin{\expandonce{\pgfplotsretval}}
+	
+	\pgfplotstablegetelem{0}{ymax}\of\axistable
+	\edef\ymax{\expandonce{\pgfplotsretval}}
+
+	\begin{pggfplot}[%
+		anchor = north east,
+		at = {($(ACR vs genome) + (\threecolumnwidth, 0)$)},
+		total width = \threecolumnwidth,
+		xlabel = GC content (\%),
+		ylabel = species,
+		yticklabels are csnames,
+		ylabel add to width = 22pt,
+		ymin = \ymin,
+		ymax = \ymax,
+		scale ridges = 2,
+		enlarge x limits = .095,
+		enlarge y limits = {lower = .075},
+		scatter styles = {%
+			At:ACR[{At, mark = solido}],%
+			At:genome[{At, mark = solidsquare}],%
+			Sb:ACR[{Sb, mark = solido}],%
+			Sb:genome[{Sb, mark = solidsquare}],%
+			Sl:ACR[{Sl, mark = solido}],%
+			Sl:genome[{Sl, mark = solidsquare}],%
+			Zm:ACR[{Zm, mark = solido}],%
+			Zm:genome[{Zm, mark = solidsquare}]%
+		},
+		legend image post style = {gray},
+		legend columns = 2,
+		legend style = {at = {(.5, .97)}, anchor = north},
+		tight y
+	]{GC_ACR_genome}
+	
+		\pggf_scatter(
+			style from column = group,
+			mark size = 3
+		)
+	
+		\pggf_quiver(
+			very thick,
+			arrows = -{Latex[scale = .67]},
+			on layer = axis foreground
+		)
+		
+		\pggf_annotate(
+			legend = {ACR, genome}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{GC |- GC plot top}
+	\subfiglabel{GC density}
+	\subfiglabel{ACR vs genome}
+
+\end{tikzpicture}

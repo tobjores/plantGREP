@@ -1,0 +1,35 @@
+\begin{tikzpicture}
+
+	%%% correlation of enhancer strength across conditions %%%
+	\coordinate (cor) at (0, 0);
+	
+	\tikzset{
+		condX/.store in = \condX,
+		condY/.store in = \condY
+	}
+	
+	\begin{pggfplot}[%
+		at = {(cor)},
+		total width = \textwidth,
+		total height = \textwidth,
+		xlabel = {\textbf{\expandafter\csname\condX\endcsname}: $\log_2$(effect size)},
+		ylabel = {\textbf{\expandafter\csname\condY\endcsname}: $\log_2$(effect size)},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		title is csname,
+		title color from name,
+		empty facet warning = false,
+		label each axis,
+	]{TF_effect_cor_conds}
+	
+		\pggf_annotate(
+			diagonal,
+			skip facets = {2, 3, 4, 7, 8, 12}
+		)
+	
+		\pggf_scatter()
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+
+\end{tikzpicture}

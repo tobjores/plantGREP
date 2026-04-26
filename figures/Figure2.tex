@@ -1,0 +1,285 @@
+\begin{tikzpicture}
+	
+	%%% effect of transcription factor binding sites %%%
+	\coordinate (TF effects) at (0, 0);
+	
+	\begin{pggfplot}[%
+		at = {(TF effects)},
+		yshift = -.5\baselineskip,
+		total width = \textwidth,
+		height = 2cm,
+		xlabel = transcription factor family (motif ID),
+		ylabel = condition,
+		ylabel add to width = 9.164pt,
+		tight y,
+		enlargelimits = 0,
+		grid = none,
+		xticklabel style = {anchor = east, rotate = 90, inner ysep = 0pt, inner xsep = .3333em},
+		xticklabels are csnames,
+		facet 1/.append style = {
+			pggf colorbar = {%
+				horizontal,
+				title = {$\log_2$(effect size)},
+				title style = {yshift = .1em},
+				height = .125 * \pgfkeysvalueof{/pgfplots/parent axis width},
+				anchor = south west,
+				at = {(parent axis.outer south west)},
+				shift = {(-3\baselineskip, 2\baselineskip)},
+				ytick = {-.3, 0, ..., 1},
+				name = colorbar
+			}
+		},
+		colormap 3 colors,
+		y dendrogram height = .5cm,
+		show y dendrogram
+	]{TF_effects}
+	
+		\pggf_heatmap()
+	
+	\end{pggfplot}
+	
+	% mark validation TFs
+	\pgfplotstableread[col sep = tab]{rawData/TF_position.tsv}\TFpostable
+	
+	\distance{pggfplot c1r1.west}{pggfplot c1r1.east}
+	\pgfmathsetlength{\templength}{\xdistance/72}
+	
+	\pgfplotstableforeachcolumnelement{pos}\of\TFpostable\as\TFpos{%
+		\node[anchor = south, inner xsep = 0pt] at ($(pggfplot c1r1.north west) + (-.5\templength, 0) + (\TFpos\templength, 0)$) {\textasteriskcentered};
+	}
+	
+	
+	%%% scheme of the TFBS shuffling experiment %%%
+	\coordinate[yshift = -\columnsep] (shuffle scheme) at (TF effects |- xlabel.south);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, shift = {(.5\fourcolumnwidth, -.65)}] (seqs text) at (shuffle scheme) {50 genomic sequences with single strong binding site for a given transcription factor};
+
+	\node[anchor = north, fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(-.75, -.1)}] (TFBS 1) at (shuffle scheme -| seqs text) {TFBS};
+	\node[anchor = south, fill = DodgerBlue2, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(.75, 0)}] (TFBS 3) at (seqs text.north) {TFBS};
+	\node[fill = DodgerBlue3, text = white, node font = \figsmall\bfseries, inner sep = .15em] (TFBS 2) at ($(TFBS 1)!.5!(TFBS 3)$) {TFBS};
+	
+	\begin{pgfonlayer}{background}
+		\draw[thick] (shuffle scheme |- TFBS 1) ++(.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (shuffle scheme |- TFBS 2) ++(1, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (shuffle scheme |- TFBS 3) ++(1.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (seqs text.south) -- ++(0, -.45) coordinate (arrow end);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, yshift = -.65cm] (shuffle text) at (arrow end) {replace original transcription factor binding site with randomly shuffled version};
+	
+	\begin{scope}
+		\selectcolormodel{gray}
+		\node[anchor = north, fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(-.75, -.1)}] (TFBS 1) at (arrow end -| seqs text) {FSBT};
+		\node[anchor = south, fill = DodgerBlue2, text = white, node font = \figsmall\bfseries, inner sep = .15em, shift = {(.75, 0)}] (TFBS 3) at (shuffle text.north) {TSFB};
+		\node[fill = DodgerBlue3, text = white, node font = \figsmall\bfseries, inner sep = .15em] (TFBS 2) at ($(TFBS 1)!.5!(TFBS 3)$) {FBTS};
+	\end{scope}
+	
+	\begin{pgfonlayer}{background}
+		\draw[thick] (shuffle scheme |- TFBS 1) ++(.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (shuffle scheme |- TFBS 2) ++(1, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+		\draw[thick] (shuffle scheme |- TFBS 3) ++(1.5, 0) -- ++(\fourcolumnwidth - 2cm, 0);
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (shuffle text.south) -- ++(0, -.45) coordinate (arrow end);
+	
+	\node[anchor = north, font = \figsmall, text width = \fourcolumnwidth - 0.6666em, align = flush center, yshift = -.65cm] (measure text) at (arrow end) {measure enhancer strength of sequences with WT or shuffled binding site};
+	
+	\node[node font = \figsmall\bfseries, align = flush center, yshift = .325cm] (Plant STARR-seq) at (measure text.north) {Plant\\STARR-seq};
+	
+	\coordinate[xshift = -.3cm] (leaf center) at (Plant STARR-seq.west);
+	\planticon*[width = .6cm]{tobaccoLeaf} at (leaf center);
+	\begin{scope}[xscale = -1]
+		\planticon[width = .323cm]{pipe} at ($(leaf center) + (.35, .16)$);
+	\end{scope}
+	
+	\coordinate[xshift = .3cm] (protoplasts) at (Plant STARR-seq.east);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (90:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (162:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (234:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (306:.15)$);
+	\planticon[width = .3cm]{protoplast} at ($(protoplasts) + (18:.15)$);
+	\planticon[width = .3cm, rotate = 15]{maize} at ($(protoplasts) + (.375, -.1)$);
+	
+	
+	%%% comparison of TFBS shuffle effect with main library %%%
+	\coordinate (correlation) at (shuffle scheme -| \textwidth - \threequartercolumnwidth, 0);
+	
+	\begin{pggfplot}[%
+		at = {(correlation)},
+		total width = \threequartercolumnwidth,
+		xlabel = {\textbf{transcription factor binding site shuffling:} $\log_2$(effect size)},
+		ylabel = {\textbf{ACR library:} $\log_2$(effect size)},
+		title is csname,
+		title color from name,
+		xytick = {-1.2, -.9, ..., 1.2}
+	]{TFBS_shuffle_tamsACR}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_trendline()
+	
+		\pggf_scatter(
+			color from column name,
+			mark size = 1.5
+		)
+	
+		\pggf_stats(
+			stats = {n,spearman,rsquare}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% scheme of synthetic enhancer design %%%
+	\coordinate[yshift = -\columnsep] (synTF scheme) at (TF effects |- xlabel.south);
+	
+	\pgfplotsset{letter colors = DNA}
+	
+	\pgfmathsetlength{\templength}{.45cm}
+	
+	\coordinate[yshift = -\columnsep - 2\templength] (TFs) at (synTF scheme);
+	
+	% nucleotide composition
+	\coordinate[shift = {(.5\columnsep + \templength, 1.5\templength)}] (low GC) at (TFs);
+	\coordinate[shift = {(.5\columnsep + \templength, -1.5\templength)}] (high GC) at (TFs);
+	
+	\pgfplotstableread[col sep = tab]{rawData/synEnh_nucFreq.tsv}\nucFreqTable
+	\pgfplotstableforeachcolumn\nucFreqTable\as\GCbin{
+		\pgfplotstablegetelem{0}{\GCbin}\of\nucFreqTable
+		\foreach [expand list, evaluate = \y as \x using 180 - \y, remember = \x as \lastx (initially 180)] \base/\y in {\pgfplotsretval}{
+			\fill[letter\base col!50] (\GCbin) -- ++(\lastx:\templength) arc[start angle = \lastx, end angle = \x, radius = \templength] coordinate[pos = .5] (c\base) -- cycle;
+			\node[font = \figsmall] at ($(\GCbin)!.6!(c\base)$) {\base};
+		}
+	}
+	
+	% sequences
+	\coordinate[xshift = .5\columnsep + \templength] (seqs) at (TFs -| low GC);
+	\coordinate (low GC seq) at (low GC -| seqs);
+	\coordinate (high GC seq) at (high GC -| seqs);
+	
+	\distance{seqs}{\threecolumnwidth - .5\columnsep, 0}
+	
+	\foreach \x/\y in {low GC/south, high GC/north}{
+		\draw[line width = .06cm, \x] (\x\space seq) node[anchor = \y\space west, text = black, text depth = 0pt, xshift = -.5\columnsep] {25 sequences with \textbf{\x} content} -- ++(\xdistance, 0) coordinate[pos = .165] (\x\space 1) coordinate[pos = .5] (\x\space 2) coordinate[pos = .835] (\x\space 3) coordinate (\x\space seq end);
+	}
+	
+	% TFs
+	\foreach \x in {1, 2, 3}{
+		\node[fill = DodgerBlue1, text = white, node font = \figsmall\bfseries, inner sep = .15em] (TFBS \x) at (TFs -| low GC \x) {TFBS};
+		
+		\draw[-Latex, shorten > = .08cm, DodgerBlue1!50] (TFBS \x.north) ++(0, .05) -- (low GC \x);
+		\draw[-Latex, shorten > = .08cm, DodgerBlue1!50] (TFBS \x.south) ++(0, -.05) -- (high GC \x);
+	}
+	
+	\node[anchor = base, node font = \figsmall] at ($(TFBS 1.base)!.5!(TFBS 2.base)$) {and/or};
+	\node[anchor = base, node font = \figsmall] at ($(TFBS 2.base)!.5!(TFBS 3.base)$) {and/or};
+
+
+	% tested TFBSs
+	\coordinate[yshift = -.5\columnsep - \templength] (TFBSs) at (synTF scheme |- high GC);
+	
+	\node[anchor = north, font = \bfseries] (title) at ($(TFBSs)!.5!(TFBSs -| low GC seq end)$) {transcription factor binding sites (TFBS)\settowidth{\global\templength}{\figsmall\usename{TF_13}}};
+
+	\pgfplotstableread[col sep = tab]{rawData/synEnh_TFs.tsv}\synEnhTFtable
+
+	\pgfplotstableforeachcolumnelement{col1}\of\synEnhTFtable\as\x{
+		\pgfmathsetmacro{\xi}{int(\pgfplotstablerow + 1)}
+		\node[anchor = base west, node font = \figsmall, yshift = -\xi*1.15\baselineskip, text width = \templength, align = right] at (TFBSs |- title.base) {\usename{\x}};
+	}
+	\pgfplotstableforeachcolumnelement{col2}\of\synEnhTFtable\as\x{
+		\pgfmathsetmacro{\xi}{int(\pgfplotstablerow + 1)}
+		\node[anchor = base east, node font = \figsmall, yshift = -\xi*1.15\baselineskip] (TFBS name \xi) at (low GC seq end |- title.base) {\usename{\x}};
+	}
+
+	% connect TFBS list with TFBSs
+	\draw[decorate, decoration = {brace, amplitude = .3cm}] ($(TFBS name 1.north east) + (-.1, 0)$) -- ($(TFBS name 6.south east) + (-.1, 0)$) coordinate[pos = .5, xshift = .3cm - \pgflinewidth] (curly);
+	\draw[thick, -Latex, shorten > = .05cm, rounded corners = .15cm] (curly) -- ++(.2, 0) |- (TFBS 3.east);
+
+
+	%%% strength of synthetic enhancers by number of inserted TFBSs %%%
+	\coordinate (synEnh strength) at (synTF scheme -| \textwidth - \twothirdcolumnwidth, 0);
+	
+	% style to shift cld labels
+	\tikzset{
+		label shift/.code = {
+			\ifnum1=#1\relax
+				\pgfkeysalso{xshift = .2em}
+			\fi
+			\def\tmpA{maize}
+			\ifx\tmpA\pggfcolname\relax
+				\ifnum1=#1\relax
+					\pgfkeysalso{yshift = .5ex}
+				\fi
+				\ifnum2=#1\relax
+					\pgfkeysalso{yshift = 1.5ex}
+				\fi
+			\fi
+		}
+	}
+	
+	% group styles
+	\pgfplotsset{
+		low GC/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfcolname\relax
+				\pgfkeysalso{fill = \pggfcolname!50!white}
+			\else
+				\pgfkeysalso{fill = \pggfcolname}
+			\fi
+		},
+		high GC/.code = {
+			\def\tmpA{dark}
+			\ifx\tmpA\pggfcolname\relax
+				\pgfkeysalso{fill = \pggfcolname}
+			\else
+				\pgfkeysalso{fill = \pggfcolname!50!black}
+			\fi
+		}
+	}
+	
+	\begin{pggfplot}[%
+		at = {(synEnh strength)},
+		total width = \twothirdcolumnwidth,
+		xlabel = number of inserted transcription factor binding sites,
+		ylabel = \enrichment,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.25, upper = 0.15},
+		title is csname,
+		title color from name,
+		legend pos = north west,
+		ytick = {-12, -10, ..., 12},
+		legend columns = 3,
+		legend style = {anchor = north, at = {(.5, 1)}},
+		legend image width = .75\baselineskip
+	]{synEnh_strength}
+		
+		\pggf_annotate(
+			manual legend = {
+				{\hspace*{-\groupplotsep}\textbf{GC:}\hspace*{-\groupplotsep}} = {empty legend},
+				low = {boxplot legend = y, fill = gray!25!white},
+				high = {boxplot legend = y, fill = gray!75!black}
+			},
+			only facet = 1
+		)
+		
+		\pggf_hline(densely dotted)
+	
+		\pggf_boxplot(
+			style from column = {GC_bin},
+			sample size = {anchor = west, rotate = 90},
+			cld = {anchor = south, text depth = 0pt, label shift = #1}{max},
+			forget plot
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels
+	\subfiglabel[yshift = .5\baselineskip]{TF effects}
+	\subfiglabel{shuffle scheme}
+	\subfiglabel{correlation}
+	\subfiglabel{synTF scheme}
+	\subfiglabel{synEnh strength}
+
+\end{tikzpicture}

@@ -1,0 +1,101 @@
+\begin{tikzpicture}
+
+	%%% Variability of TF effect sizes in synthetic enhancers %%%
+	%% scheme %%
+	\coordinate (scheme) at (0, 0);
+	
+	
+	
+	\foreach \x in {1, 2, 3}{
+		\node[anchor = west, node font = \figsmall, yshift = -.75cm - \x * .75cm] (seq\x) at (scheme) {seq\x};
+	}
+	
+	\distance{seq3.east}{\threecolumnwidth, 0}
+	\pgfmathsetlength{\templength}{(\xdistance - 2\columnsep) / 3}
+	
+	\pgfmathsetseed{928}
+	
+	\colorlet{seq1}{gray!75!white}
+	\colorlet{seq2}{gray}
+	\colorlet{seq3}{gray!75!black}
+	
+	% TFBS insertion effect
+	\node[anchor = north west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, shift = {(.5\columnsep, -.5\columnsep)}, align = center] (seq+pos) at (scheme -| seq3.east) {~\\TFBS\\insertion\\effect size};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| seq+pos.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+		\foreach \y in {1, 2, 3}{
+			\draw[->] (p\y) +(0, .05) -- ++(0, -.35) node[anchor = north, node font = \figtiny] {%
+				\pgfmathparse{rnd}%
+				\expandafter\xdef\csname tmp\x\y\endcsname{\pgfmathresult}%
+				\pgfmathprintnumber[fixed, zerofill, precision = 1]{\csname tmp\x\y\endcsname}%
+			};
+		}
+	}
+	
+	% standard deviation across positions
+	\node[anchor = base west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, xshift = .5\columnsep, align = center] (seq only) at (seq+pos.base east) {standard\\deviation\\across\\positions};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| seq only.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+		\coordinate[yshift = -.35cm] (e\x) at (p2);
+		\foreach \y in {1, 2, 3}{
+			\draw[->] (p\y) +(0, .05) -- ++(0, -.05) to[out = -90, in = 90] ($(e\x) + (0, .05)$) -- (e\x);
+		}
+		\node[anchor = north, node font = \figtiny] at (e\x) {%
+			\pgfmathsetmacro{\tmpmean}{(\csname tmp\x1\endcsname + \csname tmp\x2\endcsname + \csname tmp\x3\endcsname) / 3}%
+			\pgfmathparse{sqrt(((\csname tmp\x1\endcsname - \tmpmean)^2 + (\csname tmp\x2\endcsname - \tmpmean)^2 + (\csname tmp\x3\endcsname - \tmpmean)^2) / 2)}
+			\pgfmathprintnumber[fixed, zerofill, precision = 1]{\pgfmathresult}%
+		};
+	}
+	
+	% standard deviation across sequences
+	\node[anchor = base west, node font = \figsmall\bfseries, text width = \templength, align = center, inner xsep = 0pt, xshift = .5\columnsep, align = center] (pos only) at (seq only.base east) {standard\\deviation\\across\\sequences};
+	
+	\foreach \x in {1, 2, 3}{
+		\draw[ultra thick, seq\x] (seq\x -| pos only.west) -- ++(\templength, 0) coordinate[pos = .165] (p1) coordinate[pos = .5] (p2) coordinate[pos = .835] (p3);
+	}
+	\foreach \y in {1, 2, 3}{
+		\draw[->] (seq1 -| p\y) +(0, .05) -- (e3 -| p\y) node[anchor = north, node font = \figtiny] {%
+			\pgfmathsetmacro{\tmpmean}{(\csname tmp1\y\endcsname + \csname tmp2\y\endcsname + \csname tmp3\y\endcsname) / 3}%
+			\pgfmathparse{sqrt(((\csname tmp1\y\endcsname - \tmpmean)^2 + (\csname tmp2\y\endcsname - \tmpmean)^2 + (\csname tmp3\y\endcsname - \tmpmean)^2) / 2)}
+			\pgfmathprintnumber[fixed, zerofill, precision = 1]{\pgfmathresult}%
+		};
+	}
+	
+	
+	%% plot %%
+	\coordinate (TF sd) at (scheme -| \textwidth - \twothirdcolumnwidth, 0);
+	
+	\expandafter\def\csname acrossPos\endcsname{across\\positions}
+	\expandafter\def\csname acrossSeq\endcsname{across\\sequences}
+	
+	\begin{pggfplot}[%
+		at = {(TF sd)},
+		total width = \twothirdcolumnwidth,
+		xlabel = {},
+		ylabel = {standard deviation of effect sizes},
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.2},
+		y decimals = 1,
+		xticklabels are csnames,
+		xticklabel style = {align = center},
+		tight y
+	]{synEnh_TF_sd}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin()
+		
+		\pggf_signif()
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{scheme}
+	\subfiglabel{TF sd}
+
+\end{tikzpicture}

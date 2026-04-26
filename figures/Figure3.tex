@@ -1,0 +1,288 @@
+\begin{tikzpicture}
+	\pggfset{ylabel add to width = \baselineskip}
+
+	%%% plantGREP model %%%
+	\coordinate (plantGREP) at (0, 0);
+	
+	% sequence
+	\node[anchor = west, node font = \figsmall\courier, shift = {(0, -1.25)}] (seq) at (plantGREP) {%
+		\pgfmathsetseed{928}\randomNucs{10}\,\raisebox{.5ex}{\dots}\,\randomNucs{10}%
+	};
+	
+	\draw[very thick, -Latex] (seq.east) -- ++(.7, 0) coordinate (ohe);
+	
+	% one-hot encoded sequence
+	\node[anchor = west, node font = \figsmall\courier] (ohe) at (ohe) {
+		\pgfmathsetseed{928}\randomOhe{10}\,\raisebox{-\baselineskip}{\dots}\,\randomOhe{10}%
+	};
+	
+	\draw[very thick, -Latex] (ohe.east) -- ++(.7, 0) coordinate[xshift = .3333em] (model);
+	
+	% model
+	\node[right = .05cm of model, align = center, draw, fill = OkabeIto3!25, rounded corners, font = \figsmall, yshift = -.5\baselineskip] (bi) {bidirectional\\convolutional\\layer};
+	
+	\node[right = .5cm of bi, align = center, draw, fill = OkabeIto4!25, rounded corners, font = \figsmall] (den) {\textbf{DenseNet}\vphantom{l}\\\figtiny 6 blocks with\\\figtiny 10 layers};
+	
+	\node[right = .5cm of den, align = center, draw, fill = OkabeIto7!25, rounded corners, font = \figsmall] (fc) {fully\\connected\\layer};
+	
+	\draw[very thick, -Latex] (bi) -- (den);
+	\draw[very thick, -Latex] (den) -- (fc);
+	
+	\begin{pgfonlayer}{background}
+		\draw[fill = OkabeIto5!25, rounded corners] (model) |- ($(fc.north east) + (.05, .05cm + \baselineskip)$) node[pos = .75, anchor = north, fill = none, draw = none, text = black, font = \bfseries] (model top) {plantGREP} |- ($(bi.south west) + (-.05, -.05)$) coordinate[pos = .25] (model out) coordinate[pos = .75] (model bottom) -- cycle;
+	\end{pgfonlayer}
+	
+	\draw[very thick, -Latex] (model out) ++(.3333em, 0) -- ++(.7, 0) coordinate (predictions);
+	
+	% predictions
+	\pgfmathsetmacro{\predLight}{2 + rand * 4}
+	\pgfmathsetmacro{\predDark}{\predLight + rand * 0.5 * \predLight}
+	\pgfmathsetmacro{\predWarm}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predCold}{\predLight + rand * 0.1 * \predLight}
+	\pgfmathsetmacro{\predMaize}{1.5 + rand * 3}
+	
+	\node[anchor = west, node font = \figsmall] (predictions) at (predictions) {%
+		\pgfmathsetseed{928}%
+		\setlength{\tabcolsep}{.5em}%
+		\begin{tabular}{rrrrr}%
+			\toprule%
+			\textbf{\usename{light}} & \textbf{\usename{dark}} & \textbf{\usename{warm}} & \textbf{\usename{cold}} & \textbf{\usename{maize}} \\%
+			\midrule%
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predLight} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predDark} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predWarm} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predCold} &
+			\pgfmathprintnumber[fixed, zerofill, precision = 2]{\predMaize} \\%
+			\bottomrule%
+		\end{tabular}%
+	};
+	
+	% text
+	\node[anchor = south, font = \strut, yshift = .3em] at (seq |- model top.north) {170\,bp sequence};
+	\node[anchor = south, font = \strut, yshift = .3em] at (ohe |- model top.north) {one-hot encode};
+	\node[anchor = south, font = \strut, yshift = .3em] at (model top.north) {convolutional neural network model};
+	\node[anchor = south, font = \strut, yshift = .3em] (blub) at (predictions |- model top.north) {predict $\log_2$(enhancer strength)};
+	
+	
+	%%% enhancer strength predictions from plantGREP %%%
+	\coordinate[yshift = -\columnsep] (prediction) at (plantGREP |- model bottom);
+	
+	\begin{pggfplot}[%
+		at = {(prediction)},
+		total width = \textwidth,
+		xlabel = {\textbf{measurement}: \enrichment},
+		ylabel = {\textbf{prediction}:\\\enrichment},
+		facet 1/.append style = {
+			pggf colorbar = {%
+				title = count,
+				log2,
+				horizontal,
+				ytick = {0, 3, ..., 15}
+			}
+		},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+	]{plantGREP_predictions}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% example DeepLIFT output %%%
+	\coordinate[yshift = -\columnsep] (DeepLIFT) at (plantGREP |- xlabel.south);	
+	
+	\begin{pggfplot}[%
+		at = {(DeepLIFT)},
+		yshift = -.4cm,
+		total width = \textwidth,
+		height = .75cm,
+		xlabel = position,
+		ylabel = DeepLIFT\\contribution score,
+		row title is csname,
+		row title color from name,
+		enlarge x limits = 0,
+		xtick = {1, 10, 20, ..., 170},
+		ytick = {-.2, 0, .2, .4},
+		title font = \fignormal,
+		title style = {inner xsep = 0pt},
+	]{DeepLIFT_example}
+	
+		\pggf_annotate(
+			annotation = {
+				\coordinate (c1) at (3.5, \pggfymax);
+				\coordinate (c2) at (4.5, \pggfymax);
+				\coordinate (c3) at (13.5, \pggfymax);
+				\coordinate (c4) at (101.5, \pggfymax);
+				\coordinate (c5) at (126.5, \pggfymax);
+			},
+			only facet = 1
+		)
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\fill[gray, fill opacity = .1] (3.5, \pggfymin) rectangle (10.5, \pggfymax);
+				\fill[gray, fill opacity = .1] (13.5, \pggfymin) rectangle (19.5, \pggfymax);
+				\fill[gray, fill opacity = .1] (105.5, \pggfymin) rectangle (109.5, \pggfymax);
+				\fill[gray, fill opacity = .1] (126.5, \pggfymin) rectangle (134.5, \pggfymax);
+			}
+		)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	\node[anchor = north] at (pggfplot c1r1.north) {sequence: At-12806 (fwd)};
+	
+	% matching TF motifs
+	\distance{c1}{c2}
+	
+	\begin{pggfplot}[%
+		anchor = south west,
+		at = {(c1)},
+		width = 9\xdistance,
+		height = .4cm,
+		axis lines = none,
+		axis background/.style = {fill = none},
+		tight
+	]{TF_7_RC}
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	\node[anchor = east, node font = \figtiny] at (pggfplot c1r1.west) {\usename{TF_7}};
+	
+	\begin{pggfplot}[%
+		anchor = south west,
+		at = {(c3)},
+		width = 6\xdistance,
+		height = .4cm,
+		axis lines = none,
+		axis background/.style = {fill = none},
+		tight
+	]{TF_13_RC}
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	\node[anchor = west, node font = \figtiny] at (pggfplot c1r1.east) {\usename{TF_13}};
+	
+	\begin{pggfplot}[%
+		anchor = south west,
+		at = {(c4)},
+		width = 8\xdistance,
+		height = .4cm,
+		axis lines = none,
+		axis background/.style = {fill = none},
+		tight
+	]{TF_22}
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	\node[anchor = west, node font = \figtiny] at (pggfplot c1r1.east) {partial \usename{TF_22}};
+	
+	\begin{pggfplot}[%
+		anchor = south west,
+		at = {(c5)},
+		width = 8\xdistance,
+		height = .4cm,
+		axis lines = none,
+		axis background/.style = {fill = none},
+		tight
+	]{TF_22}
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	\node[anchor = west, node font = \figtiny] at (pggfplot c1r1.east) {\usename{TF_22}};
+	
+	
+	%%% examples of TF-MoDISco patterns and matching TF motifs %%%
+	\coordinate[yshift = -\columnsep] (TF matches) at (plantGREP |- xlabel.south);
+	
+	% modisco patterns
+	\begin{pggfplot}[%
+		at = {(TF matches)},
+		total width = \textwidth,
+		height = .75cm,
+		xlabel = {},
+		ylabel = average DeepLIFT\\contribution score,
+		col titles from table = false,
+		row title is csname,
+		row title color from name,
+		enlarge x limits = 0,
+		xmajorticks = false,
+		ytick = {-.1, 0, .1, .2},
+		empty facet warning = false,
+		title font = \fignormal,
+		title style = {inner xsep = 0pt},
+		tight y
+	]{modisco_motifs_examples}
+	
+		\pggf_annotate(
+			zeroline,
+			skip facets = {6,14,30,36,40}
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = north, align = center, node font = \figtiny, gray] at (current axis.north) {no matching\\pattern found};
+			},
+			only facets = {37, 39}
+		)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	% matching TF motifs
+	\tikzset{
+		TF name/.style = {
+			/pgfplots/extra description/.append code = {
+				\node[anchor = north, text width = \pgfkeysvalueof{/pgfplots/width}, align = center, node font = \figsmall] at (.5, 0) {\usename{#1}};
+			}
+		}
+	}
+	
+	\begin{pggfplot}[%
+		anchor = north west,
+		at = {(pggfplot c1r5.south west)},
+		yshift = -3\groupplotsep,
+		total width = \textwidth,
+		height = .75cm,
+		xlabel = {},
+		ylabel = information\\content,
+		col titles from table = false,
+		row title = TFBS,
+		row title color = gray,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0},
+		ymax = 2,
+		ytick = {0, 1, 2},
+		xmajorticks = false,
+		yticklabel style = {font = \hphantom{0.}},
+		title font = \fignormal,
+		title style = {inner xsep = 0pt},
+		tight y
+	]{modisco_TFs_examples}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_logo(letter colors = DNA)
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{plantGREP}
+	\subfiglabel{prediction}
+	\subfiglabel{DeepLIFT}
+	\subfiglabel{TF matches}
+
+\end{tikzpicture}

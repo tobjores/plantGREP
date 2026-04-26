@@ -1,0 +1,10 @@
+# ignore everything
+*
+# don't ignore directories
+!*/
+# don't ignore important files
+!.gitignore
+!*.tex
+!*.sty
+!*.lua
+!*.pdf

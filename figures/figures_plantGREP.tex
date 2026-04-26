@@ -1,0 +1,840 @@
+% !TeX spellcheck = en_US
+\documentclass[10pt]{article}
+
+\usepackage{geometry}
+\usepackage[no-math]{fontspec}
+\usepackage[fontspec-loader]{mathfont}
+\usepackage{amsmath}
+\usepackage[x11names, table]{xcolor}
+\usepackage[colors = all*]{pggfplot}
+\usepackage{plantico}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{booktabs}
+\usepackage{seqsplit}
+\usepackage{caption}
+\usepackage{newfloat}
+\usepackage{xspace}
+\usepackage[hidelinks]{hyperref}
+\usepackage{polyglossia}
+\setdefaultlanguage[variant = american]{english}
+\usepackage[noabbrev]{cleveref}
+
+%%% font definitions
+\defaultfontfeatures{Ligatures = TeX}
+\setsansfont{Arial}
+\renewcommand{\familydefault}{\sfdefault}
+\mathfont{Arial}
+\newfontfamily{\courier}{Courier New}[Scale = 1.25]
+
+%%% font sizes
+\newcommand{\fignormal}{\scriptsize} % 7pt
+\newcommand{\figsmall}{\fontsize{6}{7}\selectfont} % 6pt
+\newcommand{\figtiny}{\tiny} % 5pt
+\newcommand{\figlarge}{\footnotesize} % 8pt
+\newcommand{\fighuge}{\small} % 9pt
+
+%%% page layout
+\geometry{letterpaper, textwidth = 180mm, textheight = 240mm, marginratio = 1:1}
+\renewcommand{\textfraction}{0}
+\makeatletter
+	\setlength{\@fptop}{0pt}
+\makeatother
+    
+%%% header and footer
+\pagestyle{empty}
+
+%%% no indentation
+\setlength\parindent{0pt}
+
+%%% table layout
+\renewcommand{\arraystretch}{1.33}
+
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+
+\renewcommand{\tabularxcolumn}[1]{m{#1}}
+
+%%% useful lengths
+\newlength{\templength}
+
+\setlength{\columnsep}{4mm}
+\newlength{\twocolumnwidth}
+\setlength{\twocolumnwidth}{0.5\textwidth}
+\addtolength{\twocolumnwidth}{-.5\columnsep}
+\newlength{\threecolumnwidth}
+\setlength{\threecolumnwidth}{.333\textwidth}
+\addtolength{\threecolumnwidth}{-.666\columnsep}
+\newlength{\twothirdcolumnwidth}
+\setlength{\twothirdcolumnwidth}{2\threecolumnwidth}
+\addtolength{\twothirdcolumnwidth}{\columnsep}
+\newlength{\fourcolumnwidth}
+\setlength{\fourcolumnwidth}{.25\textwidth}
+\addtolength{\fourcolumnwidth}{-.75\columnsep}
+\newlength{\threequartercolumnwidth}
+\setlength{\threequartercolumnwidth}{3\fourcolumnwidth}
+\addtolength{\threequartercolumnwidth}{2\columnsep}
+
+%%% tikz setup
+\pgfmathsetseed{928}
+
+\input{tikz_config}
+\input{pggfplots_config}
+
+%%% useful commands
+\renewcommand{\textprime}{\char"2032{}}
+\newcommand{\textalpha}{\char"03B1{}}
+\renewcommand{\textbeta}{\char"03B2{}}
+\newcommand{\textDelta}{\char"0394{}}
+\newcommand{\textlambda}{\char"03BB{}}
+\renewcommand{\textle}{\char"2264{}}
+\renewcommand{\textge}{\char"2265{}}
+
+\newcommand{\enrichment}[1][]{%
+	\if\relax#1\relax%
+		\def\enrSuffix{}%
+	\else%
+		\def\enrSuffix{, #1}%
+	\fi%
+	$\log_2$(enhancer strength\enrSuffix)%
+}
+\newcommand{\dlratio}[1][]{%
+	$\log_2$(NanoLuc/Luc)%
+}
+
+%% define shorthands for enhancers, species, insulators, ...
+% use: \defname[<color model>]{<shorthand>}{<text form>}{<color>}
+% sets both the text form (obtained with \usename{<shorthand>}) and the color
+\newcommand{\defname}[4][HTML]{%
+	\expandafter\def\csname#2\endcsname{#3\xspace}%
+	\definecolor{#2}{#1}{#4}%
+}
+
+\newcommand{\usename}[1]{\csname#1\endcsname}
+
+\newcommand{\defalias}[2]{
+	\expandafter\def\csname#1\endcsname{\usename{#2}}%
+	\colorlet{#1}{#2}
+}
+
+% define conditions
+\defname[named]{light}{light}{OkabeIto5}
+\defname[named]{dark}{dark}{OkabeIto1}
+\defname[named]{warm}{warm}{OkabeIto7}
+\defname[named]{cold}{cold}{OkabeIto3}
+
+% define enhancers
+\defname[named]{none}{\vphantom{A}none}{black}
+\defname[named]{35S}{35S}{35Senhancer}
+\defname[named]{AB80}{\textit{AB80}}{OrangeRed1}
+\defname[named]{Cab-1}{\textit{Cab-1}}{Gold3}
+\defname[named]{rbcS-E9}{\textit{rbcS-E9}}{DarkOrchid2}
+
+% define species
+\newif\ifspecieslong
+\specieslongtrue
+
+\defname[named]{At}{%
+	\ifspecieslong%
+		\vphantom{gh}\textit{Arabidopsis}%
+	\else%
+		At%
+	\fi%
+}{OkabeIto6}
+\defalias{Arabidopsis}{At}
+
+\defname[named]{Sl}{%
+	\ifspecieslong%
+		\vphantom{\textit{Ap}}tomato%
+	\else%
+		Sl%
+	\fi%
+}{OkabeIto2}
+\defalias{tomato}{Sl}
+
+\defname[named]{Zm}{%
+	\ifspecieslong%
+		\vphantom{\textit{Ap}}maize%
+	\else%
+		Zm%
+	\fi%
+}{OkabeIto8}
+\defalias{maize}{Zm}
+
+\defname[named]{Sb}{%
+	\ifspecieslong%
+		\vphantom{\textit{Ap}}sorghum%
+	\else%
+		Sb%
+	\fi%
+}{OkabeIto4}
+\defalias{sorghum}{Sb}
+
+\defname[named]{tobacco}{tobacco}{OkabeIto4}
+
+% define TF names
+\pgfplotstableread[col sep = tab]{rawData/TF_families.tsv}\TFtable
+
+\pgfplotstableforeachcolumnelement{id}\of\TFtable\as\TFid{%
+	\pgfplotstablegetelem{\pgfplotstablerow}{family}\of{\TFtable}
+	\expandafter\edef\csname\TFid\endcsname{\pgfplotsretval}
+}
+
+% misc names
+\expandafter\def\csname STARRseq\endcsname{Plant STARR-seq}
+\expandafter\def\csname empty legend\endcsname{\relax}
+
+\defname[named]{low GC}{low GC content}{gray}\colorlet{low GC}{gray!50!white}
+\defname[named]{high GC}{high GC content}{gray}\colorlet{high GC}{gray!50!black}
+
+%%% commands to generate random sequences (normal and one-hot encoded)
+\newcommand{\randomNucs}[1]{%
+	\foreach \x in {1, ..., #1}{%
+		\pgfmathparse{int(random(4))}\ifcase\pgfmathresult\or A\or C\or G\or T\fi%
+	}%
+}
+
+\def\zero{0}
+\def\one{\textbf{1}}
+\newcommand{\randomOhe}[1]{%
+	\foreach \x in {1, ..., #1}{%
+		\pgfmathparse{int(random(4))}%
+		\ifcase\pgfmathresult\or%
+			\one\llap{\raisebox{-.8\baselineskip}{\zero}}\llap{\raisebox{-1.6\baselineskip}{\zero}}\llap{\raisebox{-2.4\baselineskip}{\zero}}%
+		\or%
+			\zero\llap{\raisebox{-.8\baselineskip}{\one}}\llap{\raisebox{-1.6\baselineskip}{\zero}}\llap{\raisebox{-2.4\baselineskip}{\zero}}%
+		\or%
+			\zero\llap{\raisebox{-.8\baselineskip}{\zero}}\llap{\raisebox{-1.6\baselineskip}{\one}}\llap{\raisebox{-2.4\baselineskip}{\zero}}%
+		\or%
+			\zero\llap{\raisebox{-.8\baselineskip}{\zero}}\llap{\raisebox{-1.6\baselineskip}{\zero}}\llap{\raisebox{-2.4\baselineskip}{\one}}%
+		\fi%
+	}%
+}
+
+%%% declare figure types
+\newif\ifnpc
+
+% main figures
+\newif\ifmain
+\newcounter{fig}
+
+\addto\captionsenglish{\renewcommand\figurename{Fig.}}
+
+\newenvironment{fig}{%
+	\begin{figure}[p]%
+		\stepcounter{fig}%
+		\pdfbookmark{\figurename\ \thefig}{figure\thefig}
+		\tikzsetnextfilename{figure\thefig}%
+		\fignormal%
+		\centering%
+}{%
+	\end{figure}%
+	\clearpage%
+	\ifnpc%
+		\makenextpagecaption%
+		\global\npcfalse%
+	\fi%
+}
+
+% extended data figures
+\newif\ifext
+\newcounter{efig}
+
+\DeclareFloatingEnvironment[fileext = loef, name = Extended Data \figurename]{extfigure}
+
+\newenvironment{efig}{%
+	\begin{extfigure}[p]%
+		\stepcounter{efig}%
+		\setcounter{subfig}{0}%
+		\pdfbookmark{\extfigurename\ \theefig}{ext_data_figure\theefig}
+		\tikzsetnextfilename{ext_data_fig\theefig}%
+		\fignormal%
+		\centering%
+}{%
+	\end{extfigure}%
+	\clearpage%
+	\ifnpc%
+		\makenextpagecaption%
+		\global\npcfalse%
+	\fi%
+}
+
+% supplementary figures
+\newif\ifsupp
+\newcounter{sfig}
+
+\DeclareFloatingEnvironment[fileext = losf, name = Supplementary \figurename]{suppfigure}
+
+\newenvironment{sfig}{%
+	\begin{suppfigure}[p]%
+		\stepcounter{sfig}%
+		\setcounter{subfig}{0}%
+		\pdfbookmark{\suppfigurename\ \thesfig}{supp_figure\thesfig}
+		\tikzsetnextfilename{supp_fig\thesfig}%
+		\fignormal%
+		\centering%
+}{%
+	\end{suppfigure}%
+	\clearpage%
+	\ifnpc%
+		\makenextpagecaption%
+		\global\npcfalse%
+	\fi%
+}
+
+% supplementary tables
+\newif\ifstab
+\newcounter{stab}
+
+\addto\captionsenglish{\renewcommand\tablename{Supplementary Table}}
+
+\newenvironment{stab}{%
+	\begin{table}[p]%
+		\stepcounter{stab}%
+		\pdfbookmark{\tablename\ \thestab}{supp_table\thestab}%
+		\fignormal%
+}{%
+	\end{table}%
+	\clearpage%
+}
+
+\newenvironment{longstab}{%
+	\begingroup%
+	\stepcounter{stab}%
+	\pdfbookmark{\tablename\ \thestab}{supp_table\thestab}%
+	\fignormal%
+}{%
+	\endgroup%
+	\clearpage%
+}
+
+%% command to put the caption on the next page
+% use instead of a normal caption: \nextpagecaption{<caption text>}
+\makeatletter
+	\newcommand{\nextpagecaption}[1]{%
+		\global\npctrue%
+		\xdef\@npctype{\@currenvir}%
+		\captionlistentry{#1}%
+		\long\gdef\makenextpagecaption{%
+				\csname\@npctype\endcsname%
+					\ContinuedFloat%
+					\caption{#1}%
+				\csname end\@npctype\endcsname%
+				\clearpage%
+		}%
+	}
+\makeatother
+
+%%% caption format
+\DeclareCaptionJustification{nohyphen}{\hyphenpenalty = 10000}
+\DeclareCaptionLabelSeparator{bar}{ | }
+
+\captionsetup{
+	labelsep = bar,
+	justification = nohyphen,
+	singlelinecheck = false,
+	labelfont = bf,
+	font = small,
+	figureposition = below,
+	tableposition = above
+}
+\captionsetup[figure]{skip = .5\baselineskip}
+
+\newcommand{\titleend}{ }
+\newcommand{\nextentry}{ }
+\newcommand{\captiontitle}[2][]{\textbf{#2.}\titleend}
+
+%%% subfigure labels
+\newif\ifsubfigupper
+\subfigupperfalse
+
+\newcounter{subfig}[figure]
+
+\tikzset{
+	subfig label/.style = {anchor = north west, inner sep = 0pt, font = \normalsize\bfseries}
+}
+
+\newcommand{\subfiglabel}[2][]{
+	\node[anchor = north west, inner sep = 0pt, font = \large\bfseries, #1] at (#2) {\strut\stepcounter{subfig}\ifsubfigupper\Alph{subfig}\else\alph{subfig}\fi};
+}
+
+\newcommand{\subfigrefsep}{,}
+\newcommand{\subfigrefand}{,}
+\newcommand{\subfigrefrange}{\textendash}
+
+\newcommand{\subfigunformatted}[1]{\ifsubfigupper\uppercase{#1}\else\lowercase{#1}\fi}
+\newcommand{\plainsubfigref}[1]{\textbf{\subfigunformatted{#1}}}
+\newcommand{\subfig}[1]{\plainsubfigref{#1}\subfigrefsep}
+\newcommand{\subfigtwo}[2]{\plainsubfigref{#1}\subfigrefand\plainsubfigref{#2}\subfigrefsep}
+\newcommand{\subfigrange}[2]{\plainsubfigref{#1}\subfigrefrange\plainsubfigref{#2}\subfigrefsep}
+\newcommand{\parensubfig}[2][]{(#1\plainsubfigref{#2})}
+\newcommand{\parensubfigtwo}[3][]{(#1\plainsubfigref{#2}\subfigrefand\plainsubfigref{#3})}
+\newcommand{\parensubfigrange}[3][]{(#1\plainsubfigref{#2}\subfigrefrange\plainsubfigref{#3})}
+
+%%% cross-reference setup
+\newcommand{\crefrangeconjunction}{\subfigrefrange}
+\newcommand{\crefpairgroupconjunction}{\subfigrefand}
+\newcommand{\crefmiddlegroupconjunction}{, }
+\newcommand{\creflastgroupconjunction}{, }
+
+\crefname{figure}{Fig.}{Figs.}
+\crefname{extfigure}{Extended Data Fig.}{Extended Data Figs.}
+\crefname{suppfigure}{Supplementary Fig.}{Supplementary Figs.}
+
+%%% what to include
+\maintrue
+\exttrue
+\supptrue
+\stabtrue
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%   ||    preamble end    ||   %%%
+%%%--\\//------------------\\//--%%%
+%%%   \/   begin document   \/   %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+	\sffamily
+	\frenchspacing
+	
+	%% Main figures start
+	\ifmain
+		
+		\begin{fig}
+			\input{Figure1}%
+			\caption{%
+				\captiontitle{Characterization of enhancer strength across species and conditions}%
+				\subfigtwo{A}{B} Test sequences (170\,bp) were derived from accessible chromatin regions (ACRs) in the genomes of \usename{Arabidopsis} (At), \usename{tomato} (Sl), \usename{maize} (Zm), and \usename{sorghum} (Sb). The array-synthesized test sequences were cloned in the forward and reverse orientation upstream of a 35S minimal promoter driving the expression of a barcoded GFP reporter gene. The plasmid library was subjected to Plant STARR-seq in transiently transformed tobacco leaves and maize leaf protoplasts \parensubfig{A}. After transformation, the plants or protoplasts were subjected to different light and temperature conditions before RNA extraction \parensubfig{B}.\nextentry
+				\subfig{C} Principal component analysis of enhancer strength determined in Plant STARR-seq replicate experiments.\nextentry
+				\subfig{D} Enhancer strength of test sequences grouped by species of origin. The percentage of enhancing ($\log_2$(enhancer strength) > 1), inactive ($\log_2$(enhancer strength) between 1 and \textminus2), and repressive ($\log_2$(enhancer strength) < \textminus2) sequences is indicated.\nextentry
+				\subfigtwo{E}{F} Correlation of \parensubfig{E} and fold-change in \parensubfig{F} enhancer strength between sequences tested in the forward and reverse orientation across the indicated Plant STARR-seq conditions. The dashed and dotted lines in \parensubfig {E} represent a 1.5-fold and 2-fold difference, respectively. \nextentry
+				\subfigtwo{G}{H} The enhancer strength of ten ACR sequences selected from the Plant STARR-seq library and a negative control without an enhancer (none) was determined using a dual-luciferase assay in stable \usename{Arabidopsis} lines \parensubfig{G} and compared to the enhancer strength determined by Plant STARR-seq in tobacco leaves in the light \parensubfig{H}.\nextentry
+				\subfig{I} Correlation between enhancer strength and gene expression in various tissues of the indicated species. ACR sequences were linked to the closest transcription start site. For each gene, only the ACR sequence with the highest enhancer strength was retained.\nextentry
+				Violin plots in \parensubfigtwo{D}{F} represent the kernel density distribution. Box plots inside violin plots and in \parensubfigtwo{G}{I} represent the median (center line), upper and lower quartiles (box limits), 1.5$\times$ interquartile range (whiskers), and outliers (points) for all corresponding samples. Numbers at the bottom of each violin or box plot indicate the number of samples in each group. In the hexbin plot in \parensubfig{D}, color indicates the number of observations in each hexagon. In \parensubfig{H}, the solid line represents a linear regression line and error bars represent the 95\% confidence interval. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated in \parensubfigtwo{E}{H}. 
+			}%
+			\label{fig:enhScreen}%
+		\end{fig}
+		
+		\begin{fig}
+			\input{Figure2}%
+			\caption{%
+				\captiontitle{Transcription factor binding sites are key determinants of enhancer strength}%
+				\subfig{A} Putative transcription factor binding sites were identified by scanning the test sequences for 72 known binding motifs of the indicated transcription factor families. Effect size, calculated as the fold-change in GC-normalized (see Methods) enhancer strength between test sequences with or without one putative binding site, is indicated by color.\nextentry
+				\subfigtwo{B}{C} To test the effect of a transcription factor binding site (TFBS), 50 test sequences containing a corresponding binding site were selected and mutated by replacing the binding site with a shuffled version. All sequences were subjected to Plant STARR-seq in the indicated conditions and species \parensubfig{B}. The effect size of 16 different binding sites (marked with asterisks in \plainsubfigref{A}) was determined as the fold-change between the wild-type and mutated sequences, and was compared to the effect size in the ACR library \parensubfig{C}. The solid and dashed lines represent a linear regression line and a $y = x$ line, respectively. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.
+				\subfigtwo{D}{E} Synthetic enhancers were designed by inserting one to three transcription factor binding sites into 25 random sequences each with a nucleotide composition similar to an average dicot (low GC) or monocot (high GC) ACR \parensubfig{D}. The synthetic enhancers were subjected to Plant STARR-seq and their enhancer strengths are shown in box plots as defined in \cref{fig:enhScreen} \parensubfig{E}. Letters above the box plots indicate significance groups determined by post-hoc Tukey tests performed separately for each condition. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{fig:TFBS}%
+		\end{fig}
+		
+		\begin{fig}
+			\input{Figure3}%
+			\caption{%
+				\captiontitle{A deep learning model predicts enhancer strength and identifies underlying features}%
+				\subfigtwo{A}{B} A convolutional neural network model, termed plantGREP, consisting of a bidirectional convolutional layer followed by a DenseNet architecture with six blocks of ten layers each and a final fully connected layer was developed to predict enhancer strength across five conditions using one-hot encoded DNA sequences as input \parensubfig{A}. The model was trained and validated on 90\% of the data. The remaining 10\% of the data (test set) were used to compare model predictions to the experimentally measured enhancer strength \parensubfig{B}. The color in the hexbin plots indicate the number of observations in each hexagon and the dashed line represents a $y = x$ line. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.\nextentry
+				\subfig{C} DeepLIFT was used to calculate contribution scores for an example ACR sequence (At-12806). Known transcription factor binding motifs that match the observed pattern are shown above the plot.\nextentry
+				\subfig{D} TF-MoDISco was used to identify commonly occurring patterns in the DeepLIFT scores across all sequences of the test set. Examples of patterns detected by TF-MoDISco (top) and matching transcription factor binding motifs (TFBS; bottom) are shown. Patterns were truncated to the size of respective TFBSs.
+			}%
+			\label{fig:plantGREP}%
+		\end{fig}
+		
+		\begin{fig}
+			\input{Figure4}%
+			\caption{%
+				\captiontitle{Building species- and condition-specific synthetic enhancers through \textit{in silico} evolution}%
+				\subfigrange{A}{C} Improved enhancers were generated through \textit{in silico} evolution using plantGREP \parensubfig{A}. The starting sequences and sequences evolved for six or twelve rounds were subjected to Plant STARR-seq in the indicated conditions and species \parensubfigtwo{B}{C}. The objective was to evolve constitutive enhancers \parensubfig{B} or species- or condition-specific enhancers \parensubfig{C}. Species and condition specificity was calculated as the fold-change in enhancer strength between two species (tobacco [mean of light, dark, warm and cold] and maize) or conditions (light and dark for light specificity; warm and cold for temperature specificity).\nextentry
+				Violin plots in \parensubfig{B} and \parensubfig{C} are as defined in \cref{fig:enhScreen} and letters above the violin plots indicate significance groups determined by post-hoc Tukey tests performed separately for each condition, species, or specificity. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{fig:synEnh}%
+		\end{fig}
+		
+		\begin{fig}
+			\input{Figure5}%
+			\caption{%
+				\captiontitle{Plant STARR-seq data and models can guide genome engineering of regulatory elements}%
+				\subfig{A} Wang \textit{et al.} used CRISPR-Cas9 to introduce deletions in the upstream region of \textit{SlCLV3} and measured the number of locules per tomato fruit\textsuperscript{18}. Increased numbers of locules are indicative of decreased \textit{SlCLV3} expression levels.\nextentry% TODO: make sure references are correct
+				\subfig{B} The enhancer strength in the dark of fragments from the \textit{SlCLV3} upstream region was determined experimentally by Plant STARR-seq (black arrows) and predicted using plantGREP (blue arrows). The orientation of the tested fragments is indicated by the direction of the arrows.\nextentry
+				\subfig{C} Liu \textit{et al.} used CRISPR-Cas9 to introduce deletions in the upstream region of \textit{ZmCLE7} and measured its expression levels\textsuperscript{19}.\nextentry% TODO: make sure references are correct
+				\subfig{D} The enhancer strength in maize of all possible 170-bp fragments from the \textit{ZmCLE7} upstream region was predicted with plantGREP. Points show individual predictions and the line represents a sliding average (window size 20\,bp).\nextentry
+				\subfigtwo{E}{F} DeepLIFT contribution scores for regions with enhancer activity (shaded in \plainsubfigref{B} and \plainsubfigref{D}) of the \textit{SlCLV3} \parensubfig{E} and \textit{ZmCLE7} \parensubfig{F} upstream regions were calculated with plantGREP for the indicated conditions. Matches to known transcription factor binding sites are shaded and labeled.\nextentry
+				Data in \parensubfig{A} and \parensubfig{C} was obtained from ref. \textsuperscript{18} and ref. \textsuperscript{19}, respectively.% TODO: make sure references are correct
+			}%
+			\label{fig:genomeScan}%
+		\end{fig}
+	
+	\fi
+	%% Main figures end
+
+	%% Extended data figures start
+	\ifext
+	
+		\begin{efig}
+			\input{ExtDataFig1}%
+			\caption{%
+				\captiontitle{Regulatory activity spans large dynamic range and is orientation-independent}%
+				\subfig{A} Violin plots (as defined in \cref{fig:enhScreen}) of the enhancer strength of test sequences grouped by species of origin. The percentage of enhancing ($\log_2$(enhancer strength) > 1), inactive ($\log_2$(enhancer strength) between 1 and \textminus2), and repressive ($\log_2$(enhancer strength) < \textminus2) sequences is indicated.\nextentry
+				\subfig{B} Hexbin plots (as defined in \cref{fig:enhScreen}) for the correlation of enhancer strength between sequences tested in the forward and reverse orientation.
+			}%
+			\label{efig:species+ori}
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig2}%
+			\caption{%
+				\captiontitle{Genomic signatures of enhancers}%
+				\subfigrange{A}{D} Enhancer strength of test sequences grouped by the relative accessibility of the corresponding region in the genome \parensubfig{A}, by the occurrence of acetylated and/or methylated histones in a 1-kb window surrounding the corresponding region in the genome \parensubfig{B}, by the genomic region from which they are derived \parensubfig{C}, or by their distance to the closest transcription start site \parensubfig{D}.\nextentry
+				Violin plots are as defined in \cref{fig:enhScreen} and letters above the plots indicate significance groups determined by post-hoc Tukey tests performed separately for each condition and species. Exact $p$ values are listed in Supplementary Data 4.\nextentry% TODO: make sure reference is correct
+				UTR, untranslated region; CDS, coding sequence; ncRNA, non-coding RNA.
+			}%
+			\label{efig:genomic_signature}
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig3}%
+			\caption{%
+				\captiontitle{Enhancer strength is correlated with gene expression \textit{in planta}}%
+				\subfig{A} Correlation between enhancer strength and gene expression in various tissues of the indicated species. At, \usename{Arabidopsis}; Sl, \usename{tomato}; Zm, \usename{maize}; Sb, \usename{sorghum}. ACR sequences were linked to the closest transcription start site. For each gene, only the ACR sequence with the highest enhancer strength was retained.\nextentry
+				\subfig{B} For genes down- or upregulated after shifting \usename{Arabidopsis} plants to the dark, the percentage of linked ACR sequences showing light-specific (1.5$\times$ stronger in the light than in the dark; light), dark-specific (1.5$\times$ stronger in the dark than in the light; dark), or constitutive (none) enhancer activity is indicated.\nextentry
+				\subfig{C} Condition-specific enhancer activity of ACR sequences grouped by the relative tissue specificity of the linked genes. Condition and tissue specificity was determined using the tau index based on our Plant STARR-seq data and the gene expression data used in \parensubfig{A}, respectively. For each gene, only the ACR sequence with the highest condition specificity was retained. Violin plots are as defined in \cref{fig:enhScreen} and letters above the plots indicate significance groups determined by a post-hoc Tukey test. Exact $p$ values are listed in Supplementary Data 4.\nextentry% TODO: make sure reference is correct
+				\subfig{D} GO term enrichment for genes linked to the top 5\% of test sequences with the highest enhancer strength in the indicated conditions and species. Significant (adjusted $p$ value \textle{} 0.05) enrichment is indicated in green; non-significant results are in gray. See Supplementary Data 2 for all GO terms and $p$ values.\nextentry
+				Gene expression data was obtained from ref. \textsuperscript{33\textendash{}36}.% TODO: make sure references are correct
+			}%
+			\label{fig:gene_expression}%
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig4}%
+			\caption{%
+				\captiontitle{GC content affects enhancer strength in \usename{tobacco}}%
+				\subfig{A} Violin plots (as defined in \cref{fig:enhScreen}) of the enhancer strength of test sequences grouped by GC content. Letters above the plots indicate significance groups determined by post-hoc Tukey tests performed separately for each condition and species. Exact $p$ values are listed in Supplementary Data 4.\nextentry% TODO: make sure reference is correct
+				\subfig{B} Distribution of GC content for the test sequences in the ACR library.\nextentry
+				\subfig{C} Average GC content of the ACR sequences (circles) and the whole genome (squares) of the indicated species.
+			}%
+			\label{efig:GC_content}
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig5}%
+			\caption{%
+				\captiontitle{Activating transcription factor binding sites are enriched in active enhancers}%
+				\subfigtwo{A}{B} Test sequences in the ACR library were categorized based on the mean (mean) and standard deviation (sd) of the GC-normalized enhancer strength of non-ACR sequences. The categorization scheme is shown for the light condition as an example \parensubfig{A}. The number of sequences in each category is indicated for all conditions and assay systems \parensubfig{B}.\nextentry
+				\subfig{C} The average count of putative transcription factor binding sites (TFBS) in the test sequences of each category was normalized to the average count in inactive sequences and compared to the effect size of the binding site as determined in \cref{fig:TFBS}\subfigunformatted{A}.
+			}%
+			\label{efig:categories_TFs}%
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig6}%
+			\caption{%
+				\captiontitle{Inserted transcription factor binding sites can increase enhancer strength}%
+				\subfigrange{A}{C} A transcription factor binding site (TFBS) was inserted into 50 random sequences and the sequences were subjected to Plant STARR-seq \parensubfig{A} to determine their enhancer strength relative to the corresponding random sequence without a binding site (no TFBS) \parensubfig{B}. The effect size of each binding site was determined as the fold-change between the sequences with and without it, and was compared to the effect size in the  ACR library (see \cref{fig:TFBS}\subfigunformatted{B}) \parensubfig{C}. The solid and dashed lines represent a linear regression line and a $y = x$ line, respectively. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.\nextentry
+				Box plots in \parensubfig{B} are as defined in \cref{fig:enhScreen}. Significant differences from a null distribution were determined using one-sample Wilcoxon rank-sum tests. Box plots for significant groups (Bonferroni-adjusted $p$ value \textle{} 0.05) are shown in green. Non-significant groups are represented by gray box plots. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{efig:TFBS_insertion}
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig7}%
+			\caption{%
+				\captiontitle{The strength of synthetic enhancers can be predicted}%
+				\subfigrange{A}{C} The strength of synthetic enhancers with two or three transcription factor binding sites was predicted based on the strength of the random sequence without any binding sites and the effects observed for inserting individual binding sites. The transcription factor binding site effects were calculated individually for each random sequence and each position (seq+pos), as the mean across all positions for each sequence (seq only), as the mean across all sequences for each position (pos only), or as the mean across all sequences and positions (mean). Additionally, transcription factor binding site effects were obtained from the ACR library experiment (ACR lib; see \cref{fig:TFBS}\subfigunformatted{A}) or from a random permutation of the seq+pos method \parensubfig{A}. For each method of obtaining transcription factor effects, the prediction accuracy was determined as the correlation between the predicted and experimentally determined synthetic enhancer strengths \parensubfig{B}. Hexbin plots (as defined in \cref{fig:enhScreen}) of this correlation are shown for the seq+pos method \parensubfig{C}.
+			}%
+			\label{efig:synEnh_pred_accuracy}%
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig8}%
+			\caption{%
+				\captiontitle{Rationally designed synthetic enhancers show little condition specificity}%
+				\subfigrange{A}{C} Synthetic enhancers were designed by inserting three binding sites for transcription factors with species- or condition-specific effects into 25 random sequences each with a nucleotide composition similar to an average dicot (low GC) or monocot (high GC) ACR \parensubfig{A}. The strength \parensubfig{B} and species or condition specificity \parensubfig{C} of these synthetic enhancers was determined by Plant STARR-seq in the indicated conditions. Species and condition specificity was calculated as the fold-change in enhancer strength between two species (tobacco [mean of light, dark, warm and cold] and maize) or conditions (light and dark for light specificity; warm and cold for temperature specificity). Box plots are as defined in \cref{fig:enhScreen} and letters above the box plots in indicate significance groups determined by post-hoc Tukey tests performed separately for each condition, species, or specificity. Exact $p$ values are listed in Supplementary Data 4. In \parensubfig{B}, box plots are colored according to the expected activity in the indicated condition.% TODO: make sure reference is correct
+			}%
+			\label{efig:synEnh_specificity}%
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig9}%
+			\caption{%
+				\captiontitle{Linear models based on transcription factor binding sites predict enhancer strength with low accuracy}%
+				\subfigrange{A}{D} Linear models based on the counts of putative transcription factor binding sites \parensubfigtwo{A}{B} or on the cumulative scores of binding motif matches within each sequence \parensubfigtwo{C}{D} were trained to predict enhancer strength. The predictions of the models were compared with the experimentally determined enhancer strengths in a held-out test set comprising 10\% of the test sequences \parensubfigtwo{B}{D}.\nextentry
+				\subfig{E} Correlation between the coefficients assigned by the linear models in \parensubfigrange{A}{D} to the 72 different transcription factor binding motifs. Selected motifs associated with increased or decreased enhancer strength are labeled.\nextentry
+				Hexbin plots in \parensubfig{B} and \parensubfig{D} are as defined in \cref{fig:enhScreen}. In \parensubfig{B}, \parensubfig{C}, and \parensubfig{E}, the dashed lines represents a $y = x$ line. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.
+				\label{efig:lm_TFs}%
+			}
+		\end{efig}
+		
+		\begin{efig}
+			\input{ExtDataFig10}%
+			\caption{%
+				\captiontitle{A linear model based on 6-mer counts predicts enhancer strength with limited accuracy}%
+				\subfigtwo{A}{B} A linear model based on the counts of all possible 6-mers in a given sequence was trained to predict enhancer strength \parensubfig{A}. The model predictions were compared with the experimentally determined enhancer strengths in a held-out test set comprising 10\% of the test sequences \parensubfig{B}. Hexbin plots are as defined in \cref{fig:enhScreen}.
+			}%
+			\label{efig:lm_kmers}%
+		\end{efig}
+		
+	\fi
+	%%% Extended data figures end
+	
+	%%% Supplementary figures start
+	\ifsupp
+	
+		\begin{sfig}
+			\input{SuppFig1}%
+			\caption{%
+				\captiontitle{Plant STARR-seq is reproducible}%
+				\subfigrange{A}{E} Hexbin plots (color represents the count of points in each hexagon) of the correlation between enhancer strength in independent Plant STARR-seq replicate experiments in the indicated conditions. The dashed lines represents a $y = x$ line. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.
+			}%
+			\label{sfig:tamsACR_repCor}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig2}%
+			\caption{%
+				\captiontitle{Plant STARR-seq detects species- and condition-specific differences in enhancer strength}%
+				Hexbin plots (as defined in \cref{sfig:tamsACR_repCor}) of the correlation between enhancer strength in different conditions.
+			}%
+			\label{sfig:tamsACR_condCor}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig3}%
+			\caption{%
+				\captiontitle{A dual-luciferase assay to measure enhancer strength in stable \usename{Arabidopsis} lines}%
+				Transgenic Arabidopsis lines were generated with T-DNAs harboring a constitutively expressed luciferase (Luc) gene and a nanoluciferase (NanoLuc) gene under control of a 35S minimal promoter coupled to a candidate enhancer. Luciferase and nanoluciferase activity was measured in the T2 generation.
+			}%
+			\label{sfig:DL_assay}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig4}%
+			\caption{%
+				\captiontitle{Accessible chromatin regions are enriched for active enhancers}%
+				Enhancer strength of sequences derived from accessible chromatin regions (ACR, left) and non-ACR sequences (right) randomly sampled from inaccessible regions in the genomes of the indicated species. At, \usename{Arabidopsis}; Sl, \usename{tomato}; Zm, \usename{maize}; Sb, \usename{sorghum}. Violin plots represent the kernel density distribution and the box plots inside represent the median (center line), upper and lower quartiles (box limits), and 1.5$\times$ interquartile range (whiskers) for all corresponding sequences. Significant differences between ACR and non-ACR sequences were determined by two-sided Wilcoxon rank-sum tests. The obtained $p$ values were Bonferroni-adjusted separately for each condition and species and are indicated: \printsigniflevels. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:accessibility}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig5}%
+			\caption{%
+				\captiontitle{The presence of transcription factor binding sites affects enhancer strength}%
+				Putative transcription factor binding sites were identified by scanning the test sequences with known binding motifs for transcription factors of the indicated families. The enhancer strength of test sequences without or with one putative binding site is shown in violin plots as defined in \cref{sfig:accessibility}. Significant differences between sequences with and without a binding site were determined by two-sided Wilcoxon rank-sum tests. The obtained $p$ values were Bonferroni-adjusted separately for each condition and species and are indicated: \printsigniflevels. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:TF_effects}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig6}%
+			\caption{%
+				\captiontitle{Transcription factor binding sites show species- and condition-specific effects on enhancer strength}%
+				Correlation between the effects of transcription factor binding sites (as determined in \cref{fig:TFBS}) in different conditions. Each dot represents a different transcription factor binding motif. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.
+			}%
+			\label{sfig:cor_TF_effects}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig7}%
+			\caption{%
+				\captiontitle{The validation library yielded reproducible results}%
+				\subfigrange{A}{E} Hexbin plots (as defined in \cref{sfig:tamsACR_repCor}) of the correlation between enhancer strength in independent Plant STARR-seq replicate experiments with the validation library in the indicated conditions.\nextentry
+				\subfig{F} Principal component analysis of enhancer strength determined in Plant STARR-seq replicate experiments with the validation library.
+			}%
+			\label{sfig:eVal_repCor}%
+		\end{sfig}
+
+		\begin{sfig}
+			\input{SuppFig8}%
+			\caption{%
+				\captiontitle{The validation library results reproduce the results obtained with the ACR library}%
+				Hexbin plots (as defined in \cref{sfig:tamsACR_repCor}) of the correlation between the strength of enhancers included in the ACR library and the validation library.
+			}%
+			\label{sfig:cor_tamsACR_eVal}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig9}%
+			\caption{%
+				\captiontitle{Removing transcription factor binding sites affects enhancer strength}%
+				Relative enhancer strength of sequences with mutations destroying a single strong ($p$ value \textle{} 0.0001) binding site for transcription factors of the indicated family. For each sequence, the enhancer strength was normalized to the strength of the corresponding wild-type sequence.\nextentry
+				Box plots represent the median (center line), upper and lower quartiles (box limits), 1.5$\times$ interquartile range (whiskers), and outliers (points) for all corresponding sequences. Numbers at the bottom of the plots indicate the number of samples in each group. Significant differences from a null distribution were determined using one-sample Wilcoxon rank-sum tests. Box plots for significant groups (Bonferroni-adjusted $p$ value \textle{} 0.05) are shown in green. Non-significant groups are represented by gray box plots. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:TFBS_shuffle_strength}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig10}%
+			\caption{%
+				\captiontitle{Sequence context has a stronger impact on enhancer strength than position of a transcription factor binding site}%
+				A transcription factor binding site (TFBS) was inserted into 50 random sequences in one of three different positions, and the effect size of each binding site was determined as the fold-change in enhancer strength between the sequence with and without this binding site. For each binding site, the standard deviation of its effects sizes was calculated across the three positions within each sequence (across positions) or across all random sequences for each position (across sequences). Violin plots are as defined in \cref{sfig:accessibility}. Significant differences were determined by two-sided Wilcoxon rank-sum tests: \printsigniflevels. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:synEnh_TF_sd}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig11}%
+			\caption{%
+				\captiontitle{Linear model coefficients are correlated with the effects of transcription factor binding sites in the ACR library}%
+				Correlation between the coefficients of the linear models from \cref{efig:lm_TFs} and the transcription factor binding site effects in the ACR library (see \cref{fig:TFBS}\subfigunformatted{A}). The solid and dashed lines represents a $y = x$ line and a linear regression line, respectively. Pearson's $R^2$, Spearman's $\rho$, and the number ($n$) of samples are indicated.
+			}%
+			\label{sfig:cor_TF_effects_lm}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig12}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that positively contribute to plantGREP predictions of enhancer strength in tobacco leaves in the light.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_pos_light}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig13}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that negatively contribute to plantGREP predictions of enhancer strength in tobacco leaves in the light.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_neg_light}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig14}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that positively contribute to plantGREP predictions of enhancer strength in tobacco leaves in the dark.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_pos_dark}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig15}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that negatively contribute to plantGREP predictions of enhancer strength in tobacco leaves in the dark.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_neg_dark}%
+		\end{sfig}
+
+		\begin{sfig}
+			\input{SuppFig16}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that positively contribute to plantGREP predictions of enhancer strength in tobacco leaves at elevated ambient temperature.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_pos_warm}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig17}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that negatively contribute to plantGREP predictions of enhancer strength in tobacco leaves at elevated ambient temperature.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_neg_warm}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig18}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that positively contribute to plantGREP predictions of enhancer strength in tobacco leaves at reduced ambient temperature.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_pos_cold}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig19}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that negatively contribute to plantGREP predictions of enhancer strength in tobacco leaves at reduced ambient temperature.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_neg_cold}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig20}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that positively contribute to plantGREP predictions of enhancer strength in maize protoplasts.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_pos_maize}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig21}%
+			\caption{%
+				\captiontitle{TF-MoDISco patterns match known transcription factor binding motifs}%
+				\subfig{A} DNA Patterns identified by TF-MoDISco that negatively contribute to plantGREP predictions of enhancer strength in maize protoplasts.\nextentry
+				\subfig{B} Transcription factor binding motifs that match the patterns in \parensubfig{A}.
+			}%
+			\label{sfig:TF-MoDISco_neg_maize}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig22}%
+			\caption{%
+				\captiontitle{A model ensemble increases the prediction accuracy of plantGREP}%
+				\subfigtwo{A}{B} To build a plantGREP model ensemble, 50 models were trained with different, random initializations of the starting model weights. Box plots (as defined in \cref{sfig:TFBS_shuffle_strength}) in \parensubfig{A} show the prediction accuracy of a plantGREP model ensemble consisting of 1, 5, 10, 20, or 50 randomly sampled models. Lines in \parensubfig{B} indicate the mean prediction accuracy and the shaded area indicates the mean $\pm$ standard deviation. For each ensemble size, models were sampled independently for a total of 50 times.\nextentry
+				Letters above the plots in \parensubfig{A} indicate significance groups determined by post-hoc Tukey tests performed separately for each condition and species. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:plantGREP_ensemble}%
+		\end{sfig}
+
+		\begin{sfig}
+			\input{SuppFig23}%
+			\caption{%
+				\captiontitle{Increasing the number of mutations per round during \textit{in silico} evolution did not increase performance}%
+				\textit{In silico} evolution was performed as in \cref{fig:synEnh}\subfigunformatted{A} (\textit{i.e.}, with one mutation per round) or by inserting two or three mutations within an 8-bp window in each round. Sequences before (0 mutations) or after inserting six or twelve mutations during \textit{in silico} evolution were subjected to Plant STARR-seq in the indicated conditions and species. Violin plots are as defined in \cref{sfig:accessibility}. Significant differences between sequences generated with one, two, or three mutations per round were determined by two-sided Wilcoxon rank-sum tests. The obtained $p$ values were Bonferroni-adjusted separately for each condition and species and are indicated: \printsigniflevels. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:evolution_muts_per_round}%
+		\end{sfig}
+		
+		\begin{sfig}
+			\input{SuppFig24}%
+			\caption{
+				\captiontitle{\textit{In silico} evolved enhancers show species- and condition-specific activity}%
+				Violin plots (as defined in \cref{sfig:accessibility} and colored according to the expected activity in the indicated condition) of the strength of enhancers before (no evolution) or after twelve rounds of \textit{in silico} evolution using plantGREP with different objectives to generate constitutive, species-, or condition-specific enhancers. Letters above the plots indicate significance groups determined by post-hoc Tukey tests performed separately for each condition and species. Exact $p$ values are listed in Supplementary Data 4.% TODO: make sure reference is correct
+			}%
+			\label{sfig:evolution_strength}
+		\end{sfig}
+	\fi
+	%%% Supplementary figures end
+	
+	%%% Supplemenary tables start
+	\ifstab
+	
+		\begin{stab}
+			\caption{\captiontitle{Composition of the ACR library}}%
+			\label{stab:tamsACR_composition}%
+			\input{SuppTab1}%
+		\end{stab}
+		
+		\begin{longstab}
+			\input{SuppTab2}%
+		\end{longstab}
+		
+		\begin{stab}
+			\caption{\captiontitle{Regulatory activity of test sequences}}%
+			\label{stab:tamsACR_categories}%
+			\input{SuppTab3}%
+		\end{stab}
+		
+		\begin{longstab}
+			\input{SuppTab4}% TODO: make sure reference is correct
+		\end{longstab}
+	
+		\begin{longstab}
+			\input{SuppTab5}%
+		\end{longstab}
+		
+	\fi
+	%%% Supplemenary tables end
+
+\end{document}

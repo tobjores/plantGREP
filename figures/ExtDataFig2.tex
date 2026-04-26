@@ -1,0 +1,162 @@
+\begin{tikzpicture}
+
+	%%% enhancer strength by chromatin accessibility %%%
+	\coordinate (accessibility) at (0, 0);
+	
+	\begin{pggfplot}[%
+		at = (accessibility),
+		total width = \textwidth,
+		xlabel = chromatin accessibility,
+		ylabel = \enrichment,
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		ytick = {-12, -10, ..., 12}
+	]{tamsACR_cutcount}
+	
+		\pggf_annotate(zeroline)
+		
+		\pggf_violin(
+			color from col name,
+			draw = black,
+			shade = left,
+			shade color = white,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	
+	%%% enhancer strength by histone modifications %%%
+	\coordinate[yshift = -\columnsep] (histones) at (accessibility |- xlabel.south);
+	
+	\planticon[height = .5cm]{arabidopsis} at ($(histones) + (.6, -.25)$);
+	
+	\expandafter\def\csname none\endcsname{\vphantom{$+$}$-$\\\vphantom{$+$}$-$}
+	\expandafter\def\csname ac\endcsname{$+$\\\vphantom{$+$}$-$}
+	\expandafter\def\csname me\endcsname{\vphantom{$+$}$-$\\$+$}
+	\expandafter\def\csname ac+me\endcsname{$+$\\$+$}
+	
+	\begin{pggfplot}[%
+		at = {(histones)},
+		total width = \textwidth,
+		xlabel = histone modification,
+		ylabel = \enrichment,
+		xticklabels are csnames,
+		xticklabel style = {align = center, name = xticklabel},
+		ytick = {-12, -10, ..., 12},
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		title is csname,
+		title color from name,
+		tight y
+	]{tamsACR_histones}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin(
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	\node[anchor = south east, align = right, node font = \figsmall, text depth = 0pt, inner xsep = 0pt, xshift = 3pt] at (pggfplot c1r1.west |- xticklabel.south) {\vphantom{$+$}\smash{acetylation}\\\vphantom{$+$}\smash{methylation}};
+	
+	
+	%%% enhancer strength by genomic region %%%
+	\coordinate[yshift = -\columnsep] (region) at (accessibility |- xlabel.south);
+	
+	\expandafter\def\csname intergenic\endcsname{intergenic\xspace}
+	\expandafter\def\csname 5'UTR\endcsname{5\textprime~UTR\xspace}
+	\expandafter\def\csname CDS\endcsname{CDS\xspace}
+	\expandafter\def\csname intron\endcsname{intron\xspace}
+	\expandafter\def\csname 3'UTR\endcsname{3\textprime~UTR\xspace}
+	\expandafter\def\csname ncRNA\endcsname{ncRNA\xspace}
+	
+	\begin{pggfplot}[%
+		at = (region),
+		total width = \textwidth,
+		xlabel = region,
+		ylabel = \enrichment,
+		xticklabels are csnames,
+		xticklabel style = {rotate = 45, anchor = north east, inner sep = 0.236em},
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		ytick = {-12, -10, ..., 12},
+		sample size = {font = \fontsize{4}{5}\selectfont},
+		tight y,
+	]{tamsACR_region}
+	
+		\pggf_annotate(zeroline)
+	
+		\pggf_violin(
+			draw = black,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+
+
+	%%% enhancer strength by distance to closest TSS %%%
+	\coordinate[yshift = -\columnsep] (TSS dist) at (accessibility |- xlabel.south);
+	
+	\expandafter\def\csname u5+\endcsname{$>5$\xspace}
+	\expandafter\def\csname u5\endcsname{5\textendash1\xspace}
+	\expandafter\def\csname u1\endcsname{1\textendash0\xspace}
+	\expandafter\def\csname d1\endcsname{0\textendash1\xspace}
+	\expandafter\def\csname d5\endcsname{1\textendash5\xspace}
+	\expandafter\def\csname d5+\endcsname{$>5$\xspace}
+	
+	\begin{pggfplot}[% 
+		at = (TSS dist),
+		total width = \textwidth,
+		xlabel = distance to closest transcription start site (kb),
+		ylabel = \enrichment,
+		xlabel style = {yshift = -.667\baselineskip},
+		xticklabels are csnames,
+		xticklabel style = {name = xticklabel},
+		title is csname,
+		title color from name,
+		enlarge x limits = 0,
+		enlarge y limits = {lower = 0.1, upper = 0.1},
+		ytick = {-12, -10, ..., 12},
+		sample size = {font = \fontsize{4}{5}\selectfont},
+		tight y,
+	]{tamsACR_TSS_dist}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\coordinate (c1) at (1, 0);
+				\coordinate (c2) at (2, 0);
+			}
+		)
+	
+		\pggf_violin(
+			color from col name,
+			draw = black,
+			shade = right,
+			shade color = white,
+			cld = {anchor = south, text depth = 0pt}{max}
+		)
+	
+	\end{pggfplot}
+	
+	\distance{c1}{c2}
+	
+	\foreach \x in {1, ..., 5}{
+		\draw[serif cm-serif cm] (pggfplot c\x r1.west |- xticklabel.south) ++(.05\xdistance, 0) -- ++(2.9\xdistance, 0) node[pos = .5, anchor = north, node font = \figsmall] {upstream};
+		\draw[serif cm-serif cm] (pggfplot c\x r1.east |- xticklabel.south) ++(-.05\xdistance, 0) -- ++(-2.9\xdistance, 0) node[pos = .5, anchor = north, node font = \figsmall] {downstream};	
+	}
+
+
+	%%% subfigure labels %%%
+	\subfiglabel{accessibility}
+	\subfiglabel{histones}
+	\subfiglabel{region}
+	\subfiglabel{TSS dist}
+
+\end{tikzpicture}

@@ -1,0 +1,107 @@
+\begin{tikzpicture}
+
+	%%% enhancer strength by species (without light) %%%
+	\coordinate (species) at (0, 0);
+	
+	\planticon[height = .5cm]{light} at ($(species) + (.6, -.25)$);
+	
+	\begin{pggfplot}[% 
+		at = (species),
+		total width = \textwidth - 2\baselineskip,
+		xlabel = species,
+		ylabel = \enrichment,
+		xticklabels are csnames,
+		col title = light,
+		title is csname,
+		title color from name,
+		enlarge x limits = {lower = 0, upper = .15},
+		enlarge y limits = {lower = 0.1},
+		ytick = {-12, -10, ..., 12},
+		xticklabel style = {font = \specieslongfalse},
+		skip facet = 1,
+	]{tamsACR_species}
+	
+		\pggf_annotate(
+			zeroline,
+			annotation = {
+				\draw[gray, dashed] (\pggfxmin, -2) -- (\pggfxmax, -2) coordinate (repressive) (\pggfxmin, 1) -- (\pggfxmax, 1) coordinate (enhancing);
+			}
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = east, node font = \figsmall] at ($(enhancing)!.5!(\pggfxmax, \pggfymax)$) {19\%};
+				\node[anchor = north east, node font = \figsmall] at (\pggfxmax, 0) {69\%};
+				\node[anchor = east, node font = \figsmall] at ($(repressive)!.5!(\pggfxmax, \pggfymin)$) {12\%};
+			},
+			only facet = 1
+		)
+	
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = east, node font = \figsmall] at ($(enhancing)!.5!(\pggfxmax, \pggfymax)$) {22\%};
+				\node[anchor = north east, node font = \figsmall] at (\pggfxmax, 0) {76\%};
+				\node[anchor = east, node font = \figsmall] at ($(repressive)!.5!(\pggfxmax, \pggfymin)$) {2\%};
+			},
+			only facet = 2
+		)
+	
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = east, node font = \figsmall] at ($(enhancing)!.5!(\pggfxmax, \pggfymax)$) {11\%};
+				\node[anchor = north east, node font = \figsmall] at (\pggfxmax, 0) {78\%};
+				\node[anchor = east, node font = \figsmall] at ($(repressive)!.5!(\pggfxmax, \pggfymin)$) {11\%};
+			},
+			only facet = 3
+		)
+		
+		\pggf_annotate(
+			annotation = {
+				\node[anchor = east, node font = \figsmall] at ($(enhancing)!.5!(\pggfxmax, \pggfymax)$) {5\%};
+				\node[anchor = north east, node font = \figsmall] at (\pggfxmax, 0) {84\%};
+				\node[anchor = east, node font = \figsmall] at ($(repressive)!.5!(\pggfxmax, \pggfymin)$) {11\%};
+			},
+			only facet = 4
+		)
+	
+		\pggf_violin(
+			style from column = {fill = xticklabels}
+		)
+	
+	\end{pggfplot}
+
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (pggfplot c4r1.north east) -- (enhancing -| pggfplot c4r1.east) node[pos = .5, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {enhancing};
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (enhancing -| pggfplot c4r1.east) -- (repressive -| pggfplot c4r1.east) node[pos = .4, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {inactive};
+	\draw[decorate, decoration = {brace, amplitude = .15cm, raise = .075cm}] (repressive -| pggfplot c4r1.east) -- (pggfplot c4r1.south east) node[pos = .55, anchor = south, rotate = -90, node font = \figsmall, align = center, yshift = .225cm] {repressive};
+	
+
+	%%% correlation of enhancer strength in forward and reverse orientation (without light) %%%
+	\coordinate[yshift = -\columnsep] (ori cor) at (species |- xlabel.south);
+	
+	\begin{pggfplot}[%
+		at = {(ori cor)},
+		total width = \textwidth,
+		xlabel = {\textbf{forward}: \enrichment},
+		ylabel = {\textbf{reverse}: \enrichment},
+		facet 1/.append style = {pggf colorbar = {title = count, log2, horizontal}},
+		title is csname,
+		title color from name,
+		xytick = {-12, -10, ..., 12},
+		skip facet = 1,
+		tight y
+	]{tamsACR_cor_orientation}
+	
+		\pggf_annotate(diagonal)
+	
+		\pggf_hexbin(bins = 50)
+	
+		\pggf_stats(stats = {n,spearman,rsquare})
+	
+	\end{pggfplot}
+	
+	
+	%%% subfigure labels %%%
+	\subfiglabel{species}
+	\subfiglabel{ori cor}
+
+\end{tikzpicture}
