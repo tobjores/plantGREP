@@ -1,0 +1,1 @@
+TF-cluster.meme from: Jores et al., 2021, Nature Plants; https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/refs/heads/main/data/misc/TF-clusters.meme

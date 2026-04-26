@@ -1,0 +1,1 @@
+Sl_new_gene_IDs.txt created by extracting gene IDs from: https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-59/gff3/solanum_lycopersicum (8/22/2024)

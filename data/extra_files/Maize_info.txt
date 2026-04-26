@@ -1,0 +1,2 @@
+Dominant TSS annotation for Maize from the Grotewold lab (Mejía-Guerra et al., 2015, Plant Cell)
+B73v4_to_B73v5.tsv from MaizeGDB (https://download.maizegdb.org/Pan-genes/B73_gene_xref/B73v4_to_B73v5.tsv; 8/22/2024)

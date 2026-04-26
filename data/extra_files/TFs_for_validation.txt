@@ -1,0 +1,17 @@
+type	TF
+tobacco_strong	15
+tobacco_strong	21
+tobacco_strong	2
+maize_strong	19
+maize_strong	6
+maize_strong	29
+tobacco_weak	35
+tobacco_weak	68
+maize_weak	59
+maize_weak	33
+light_high	25
+light_high	22
+light_low	13
+light_low	7
+temp_high	9
+temp_low	42
