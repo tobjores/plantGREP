@@ -1,0 +1,16 @@
+arch_name: null
+loss_fxn: mse
+metric: null
+metric_kwargs: {}
+model_name: null
+optimizer: adam
+optimizer_kwargs: {}
+optimizer_lr: 0.001
+save_hyperparams: true
+scheduler: reduce_lr_on_plateau
+scheduler_kwargs:
+  factor: 0.5
+  patience: 2
+scheduler_monitor: val_loss_epoch
+seed: null
+task: regression
