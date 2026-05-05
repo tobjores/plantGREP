@@ -36,7 +36,7 @@ model_outputs = ['light', 'dark', 'warm', 'cold', 'maize']
 
 # Function to parse command-line arguments:
 def parse_arguments():
-  model_ref = 'Jores et al., 2026, unpublished (<DOI>)'
+  model_ref = 'Jores et al., 2026, bioRxiv (https://doi.org/10.64898/2026.04.26.720828)'
 
   parser = argparse.ArgumentParser(
     description = f'plantGREPcli is a command-line tool for using the deep learning model developed in {model_ref}.'

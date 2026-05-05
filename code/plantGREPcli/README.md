@@ -1,6 +1,6 @@
 # Welcome to plantGREPcli
 
-plantGREPcli is a command-line interface to run plantGREP (plant Gene Regulatory Element Predictor), a deep learning model for predicting enhancer strength, developed in [Jores et al., 2026, unpublished](<DOI>).
+plantGREPcli is a command-line interface to run plantGREP (plant Gene Regulatory Element Predictor), a deep learning model for predicting enhancer strength, developed in [Jores et al., 2026, bioRxiv](https://doi.org/10.64898/2026.04.26.720828).
 
 plantGREPcli offers an easy-to-use interface to:
 
@@ -99,7 +99,7 @@ For quick usage instructions use the `--help` flag (*e.g.*, `python plantGREPcli
 
     In our experiments, we measured the enhancer strength of candidate sequences in different assay systems and under different environmental conditions. Experiments were conducted with tobacco plants kept in normal light/dark cycles (`light`), in complete darkness (`dark`), and at elevated (`warm`) or reduced (`cold`) ambient temperature. Additionally, we also conducted experiments in maize protoplasts (`maize`). The plantGREP model was trained to predict enhancer strength in all these conditions/assay systems.
     
-    Please read [Jores et al., 2025, unpublished](<DOI>) for more information.
+    Please read [Jores et al., 2026, bioRxiv](https://doi.org/10.64898/2026.04.26.720828) for more information.
 
 1. **What is *in silico* evolution?**
 
@@ -108,4 +108,4 @@ For quick usage instructions use the `--help` flag (*e.g.*, `python plantGREPcli
 
 ## Reference
 
-Please cite [Jores et al., 2026, unpublished](<DOI>) when using plantGREPcli. Thank you!
+Please cite [Jores et al., 2026, bioRxiv](https://doi.org/10.64898/2026.04.26.720828) when using plantGREPcli. Thank you!

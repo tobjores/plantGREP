@@ -1,6 +1,6 @@
 # Massively parallel characterization and deep learning of enhancers in plant genomes
 
-Code used in the article "Massively parallel characterization and deep learning of enhancers in plant genomes" ([paper link](https://doi.org/))
+Code used in the article "Massively parallel characterization and deep learning of enhancers in plant genomes" ([paper link](https://doi.org/10.64898/2026.04.26.720828))
 
 The folder `code` contains all code used to process the sequencing data, analyze the results, and generate the raw data for the figures.
 
