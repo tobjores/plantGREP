@@ -10,7 +10,7 @@ The folder `figures` contains the LaTeX code to generate the figures of the arti
 
 ## Using plantGREP
 
-There are two ways to access the deep learning model develop in this study:
+There are two ways to access the deep learning model developed in this study:
 
 1. Use the interactive [Google Colab notebook](https://colab.research.google.com/github/tobjores/plantGREP/blob/main/code/plantGREPcolab/plantGREPcolab.ipynb)
 
